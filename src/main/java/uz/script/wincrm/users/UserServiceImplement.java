@@ -5,12 +5,13 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
-
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
+import uz.script.wincrm.exceptions.AlreadyExistsException;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.roles.Role;
@@ -21,7 +22,6 @@ import uz.script.wincrm.utils.Status;
 
 import java.util.HashSet;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -29,32 +29,42 @@ import java.util.stream.Collectors;
 @Service
 @RequiredArgsConstructor
 @Transactional
-public class UserServiceImplement implements UserService  {
+public class UserServiceImplement implements UserService {
+
     private final UserRepository repository;
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final StorageService storageService;
 
     @Override
-    @CacheEvict(value = "users", allEntries = true)
+    @Caching(evict = {
+            @CacheEvict(value = "users", allEntries = true)
+    })
     @Auditable(
             action = AuditAction.CREATE,
             entity = "User"
     )
     public UserResponse create(UserDTO dto) {
+
+        log.info("Create user {}", dto.getUsername());
+
         if (repository.existsByUsername(dto.getUsername())) {
-            throw new RuntimeException("Username already exists");
+            throw new AlreadyExistsException(
+                    "Username already exists: " + dto.getUsername()
+            );
         }
 
         Set<Role> roles = new HashSet<>(roleRepository.findAllById(dto.getRoleIds()));
 
         if (roles.size() != dto.getRoleIds().size()) {
-            throw new RuntimeException("One or more roles not found");
+            throw new BadRequestException("One or more roles not found");
         }
-        String username = Objects.requireNonNull(SecurityContextHolder
-                        .getContext()
-                        .getAuthentication())
+
+        String createdUsername = SecurityContextHolder
+                .getContext()
+                .getAuthentication()
                 .getName();
+
         String photoLink = null;
 
         if (dto.getPhoto() != null && !dto.getPhoto().isEmpty()) {
@@ -66,46 +76,60 @@ public class UserServiceImplement implements UserService  {
                 .password(passwordEncoder.encode(dto.getPassword()))
                 .fullName(dto.getFullName())
                 .phone(dto.getPhone())
-                .photoLink(photoLink)
                 .roles(roles)
+                .photoLink(photoLink)
                 .status(Status.ACTIVE)
-                .createdUsername(username)
+                .createdUsername(createdUsername)
                 .build();
 
-        User saved = repository.save(user);
-        return mapUserToUserResponse(saved);
+        repository.save(user);
+
+        log.info("User {} successfully created", user.getUsername());
+
+        return mapUserToUserResponse(user);
     }
 
     @Override
-    @Cacheable(value = "users", key = "#id")
-    @Auditable(
-            action = AuditAction.READ,
-            entity = "User"
-    )
+    @Cacheable(value = "user", key = "#id")
     public UserResponse findById(Long id) {
-        log.info("Find user by user id {}", id);
-        return mapUserToUserResponse(repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found with id " + id)));
+
+        log.info("Find user by id {}", id);
+
+        User user = repository.findByIdAndStatusNot(id, Status.DELETED)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id " + id));
+
+        return mapUserToUserResponse(user);
     }
 
     @Override
     @Cacheable(value = "users")
-    @Auditable(
-            action = AuditAction.READ,
-            entity = "User"
-    )
     public List<UserResponse> fetchAllUsers() {
+
         log.info("Fetch all users");
-        return repository.findAll().stream().map(this::mapUserToUserResponse).toList();
+
+        return repository.findAllByStatusNot(Status.DELETED)
+                .stream()
+                .map(this::mapUserToUserResponse)
+                .toList();
     }
 
     @Override
-    @CacheEvict(value = "users", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "User"
     )
     public UserResponse update(Long id, UserDTO dto) {
-        log.info("Update user with id {}", id);
+
+        log.info("Update user {}", id);
+
+        User user = repository.findByIdAndStatusNot(id, Status.DELETED)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id " + id));
 
         Set<Role> roles = new HashSet<>(roleRepository.findAllById(dto.getRoleIds()));
 
@@ -113,85 +137,116 @@ public class UserServiceImplement implements UserService  {
             throw new BadRequestException("One or more roles not found");
         }
 
-        User user = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id = " + id));
-
         user.setFullName(dto.getFullName());
         user.setPhone(dto.getPhone());
         user.setRoles(roles);
 
-        // Password faqat yuborilgan bo'lsa yangilanadi
         if (dto.getPassword() != null && !dto.getPassword().isBlank()) {
             user.setPassword(passwordEncoder.encode(dto.getPassword()));
         }
 
-        // Photo faqat yangi fayl yuborilgan bo'lsa yangilanadi
         if (dto.getPhoto() != null && !dto.getPhoto().isEmpty()) {
-            String photoLink = "/api/files/" + storageService.uploadFile(dto.getPhoto());
-            user.setPhotoLink(photoLink);
+
+            if (user.getPhotoLink() != null) {
+                storageService.delete(user.getPhotoLink().replace("/api/files/", ""));
+            }
+
+            user.setPhotoLink(
+                    "/api/files/" + storageService.uploadFile(dto.getPhoto())
+            );
         }
 
-        User updatedUser = repository.save(user);
+        log.info("User {} successfully updated", user.getUsername());
 
-        return mapUserToUserResponse(updatedUser);
+        return mapUserToUserResponse(user);
     }
 
     @Override
-    @CacheEvict(value = "users", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     @Auditable(
             action = AuditAction.DELETE,
             entity = "User"
     )
     public void delete(Long id) {
-        log.info("Delete user by user id {}", id);
-        User user = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found with id = " + id));
+
+        log.info("Delete user {}", id);
+
+        User user = repository.findByIdAndStatusNot(id, Status.DELETED)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id " + id));
+
         user.setStatus(Status.DELETED);
 
+        log.info("User {} marked as deleted", user.getUsername());
     }
 
     @Override
-    @CacheEvict(value = "users", key = "#id")
+    @Caching(evict = {
+            @CacheEvict(value = "user", key = "#id"),
+            @CacheEvict(value = "users", allEntries = true)
+    })
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "User"
     )
     public void activeOrDisabledUser(Long id) {
-        log.info("Disable or active user with id {}" , id);
-        User user = repository.findById(id).orElseThrow(()-> new ResourceNotFoundException("User not found with id = " + id));
-        if(user.getStatus() == Status.ACTIVE){
-            log.info("Disabled user {}", user.getUsername());
-            user.setStatus(Status.DISABLED);
-        }
-        if(user.getStatus() == Status.DISABLED){
-            log.info("Activate user {}", user.getUsername());
-            user.setStatus(Status.ACTIVE);
+
+        log.info("Change status for user {}", id);
+
+        User user = repository.findByIdAndStatusNot(id, Status.DELETED)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("User not found with id " + id));
+
+        switch (user.getStatus()) {
+
+            case ACTIVE -> {
+                user.setStatus(Status.DISABLED);
+                log.info("User {} disabled", user.getUsername());
+            }
+
+            case DISABLED -> {
+                user.setStatus(Status.ACTIVE);
+                log.info("User {} activated", user.getUsername());
+            }
+
+            default -> throw new BadRequestException(
+                    "Status cannot be changed"
+            );
         }
     }
 
-    private UserResponse mapUserToUserResponse(User user){
+    private UserResponse mapUserToUserResponse(User user) {
+
         return UserResponse.builder()
                 .id(user.getId())
                 .username(user.getUsername())
                 .fullName(user.getFullName())
                 .phone(user.getPhone())
+                .photoLink(user.getPhotoLink())
                 .role(
-                        user.getRoles().stream()
+                        user.getRoles()
+                                .stream()
                                 .map(this::mapRoleToRoleResponse)
-                                .collect(Collectors.toSet()))
+                                .collect(Collectors.toSet())
+                )
                 .status(user.getStatus())
                 .createdAt(user.getCreatedAt())
                 .updateAt(user.getUpdatedAt())
-                .photoLink(user.getPhotoLink())
                 .build();
     }
 
-    private RoleResponse mapRoleToRoleResponse(Role role){
-        return new RoleResponse(
-                role.getId(),
-                role.getName(),
-                role.getStatus(),
-                role.getCreatedAt(),
-                role.getUpdatedAt(),
-                role.getCreatedUsername());
+    private RoleResponse mapRoleToRoleResponse(Role role) {
+
+        return RoleResponse.builder()
+                .id(role.getId())
+                .name(role.getName())
+                .status(role.getStatus())
+                .createdAt(role.getCreatedAt())
+                .updatedAt(role.getUpdatedAt())
+                .createdUsername(role.getCreatedUsername())
+                .build();
     }
 }

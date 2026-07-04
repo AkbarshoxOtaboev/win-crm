@@ -48,7 +48,7 @@ public class FileController {
             @PathVariable String fileName
     ) {
 
-        storageService.deleteFile(fileName);
+        storageService.delete(fileName);
 
         return ResponseEntity.noContent().build();
     }

@@ -90,7 +90,7 @@ public class StorageServiceImplement implements StorageService {
     }
 
     @Override
-    public void deleteFile(String fileName) {
+    public void delete(String fileName) {
 
         try {
 

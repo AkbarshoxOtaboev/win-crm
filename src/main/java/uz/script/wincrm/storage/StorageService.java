@@ -8,5 +8,5 @@ public interface StorageService {
 
     Resource downloadFile(String fileName);
 
-    void deleteFile(String fileName);
+    void delete(String fileName);
 }

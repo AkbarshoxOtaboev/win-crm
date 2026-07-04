@@ -1,0 +1,41 @@
+spring:
+  application:
+    name: pharm
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/wincrm_db
+    username: postgres
+    password: postgres
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 10
+
+  servlet:
+    multipart:
+      max-file-size: 30MB
+      max-request-size: 30MB
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: true
+    database: postgresql
+    open-in-view: true
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+
+server:
+  port: 8080
+
+jwt:
+  secret: a9y5iQqQzM+4YVQK8k8Yk7O2lP4W5uV4vW8l4gFhY8Lw7T3z4eJvL5rQkP2M7hGx
+  access-expiration-ms: 1800000        # 30 daqiqa
+  refresh-expiration-ms: 604800000    # 7 kun
+file:
+  upload-dir: uploads

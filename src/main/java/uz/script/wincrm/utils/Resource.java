@@ -4,5 +4,8 @@ public enum Resource {
     USER,
     ROLE,
     CLIENT,
-    SUPPLIER
+    SUPPLIER,
+    UNIT_TYPE,
+    GOODS_GROUP,
+    GOODS
 }

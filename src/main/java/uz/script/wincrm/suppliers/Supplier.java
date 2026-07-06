@@ -1,29 +1,24 @@
-package uz.script.wincrm.clients;
+package uz.script.wincrm.suppliers;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Table;
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import jakarta.persistence.*;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 
 @Entity
-@Table(name = TableName.CLIENTS)
-@SQLRestriction("status <> 'DELETED'")
+@Table(name = TableName.SUPPLIERS)
+@SQLRestriction("status <> 'DELETED' ")
 @Getter
 @Setter
 @SuperBuilder
 @NoArgsConstructor
 @AllArgsConstructor
-public class Client extends BaseEntity {
+public class Supplier extends BaseEntity {
 
     @Column(nullable = false)
-    private String fullName;
+    private String name;
 
     @Column(length = 20, unique = true)
     private String inn;

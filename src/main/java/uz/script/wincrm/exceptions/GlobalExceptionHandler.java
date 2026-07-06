@@ -19,8 +19,7 @@ public class GlobalExceptionHandler {
     // validation exceptions
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<?> handleValidation(
-            MethodArgumentNotValidException ex,
-            HttpServletRequest request
+            MethodArgumentNotValidException ex
     ) {
         Map<String, String> errors = new HashMap<>();
 
@@ -62,7 +61,6 @@ public class GlobalExceptionHandler {
     // forbidden
     @ExceptionHandler(ForbiddenException.class)
     public ResponseEntity<ErrorResponse> handleForbidden(
-            ForbiddenException ex,
             HttpServletRequest request
     ) {
         return buildResponse("Access denied", HttpStatus.FORBIDDEN, request);

@@ -104,7 +104,8 @@ public class SecurityConfig {
 
         // frontend URLs
         configuration.setAllowedOrigins(List.of(
-                "http://localhost:5173"   // Vite
+                "http://localhost:5173",// Vite
+                "http://192.168.1.100:5173"
         ));
 
         configuration.setAllowedMethods(List.of(

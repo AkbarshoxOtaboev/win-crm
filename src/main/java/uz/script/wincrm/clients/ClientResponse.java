@@ -1,4 +1,5 @@
 package uz.script.wincrm.clients;
+
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
@@ -20,22 +21,58 @@ public class ClientResponse {
     private Long id;
 
     @Schema(
-            description = "Client's full name",
+            description = "Client full name",
             example = "John Doe"
     )
     private String fullName;
 
     @Schema(
-            description = "Client phone number",
+            description = "Client INN (Tax Identification Number)",
+            example = "306123456"
+    )
+    private String inn;
+
+    @Schema(
+            description = "Primary phone number",
             example = "+998901234567"
     )
     private String phone;
+
+    @Schema(
+            description = "Additional phone number",
+            example = "+998911234567"
+    )
+    private String additionalPhone;
 
     @Schema(
             description = "Client address",
             example = "Tashkent, Chilonzor district"
     )
     private String address;
+
+    @Schema(
+            description = "Bank name",
+            example = "Agrobank"
+    )
+    private String bankName;
+
+    @Schema(
+            description = "Bank MFO",
+            example = "00450"
+    )
+    private String mfo;
+
+    @Schema(
+            description = "Bank account number",
+            example = "20208000123456789001"
+    )
+    private String accountNumber;
+
+    @Schema(
+            description = "Additional description about the client",
+            example = "Regular customer with long-term contract"
+    )
+    private String description;
 
     @Schema(
             description = "Current client status",

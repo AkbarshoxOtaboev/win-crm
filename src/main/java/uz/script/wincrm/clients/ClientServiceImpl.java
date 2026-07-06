@@ -30,6 +30,11 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
+    public boolean existsByInn(String inn) {
+        return inn != null && !inn.isBlank() && repository.existsByInn(inn);
+    }
+
+    @Override
     @Auditable(
             action = AuditAction.CREATE,
             entity = "Client"
@@ -39,14 +44,29 @@ public class ClientServiceImpl implements ClientService {
         log.info("Create client");
 
         if (existsByPhone(dto.getPhone())) {
-            throw new AlreadyExistsException("Client with phone '" + dto.getPhone() + "' already exists");
+            throw new AlreadyExistsException(
+                    "Client with phone '" + dto.getPhone() + "' already exists");
         }
-        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+
+        if (existsByInn(dto.getInn())) {
+            throw new AlreadyExistsException(
+                    "Client with INN '" + dto.getInn() + "' already exists");
+        }
+
+        String username = Objects.requireNonNull(
+                SecurityContextHolder.getContext().getAuthentication()
+        ).getName();
 
         Client client = Client.builder()
                 .fullName(dto.getFullName())
+                .inn(dto.getInn())
                 .phone(dto.getPhone())
+                .additionalPhone(dto.getAdditionalPhone())
                 .address(dto.getAddress())
+                .bankName(dto.getBankName())
+                .mfo(dto.getMfo())
+                .accountNumber(dto.getAccountNumber())
+                .description(dto.getDescription())
                 .status(Status.ACTIVE)
                 .createdUsername(username)
                 .build();
@@ -62,7 +82,8 @@ public class ClientServiceImpl implements ClientService {
         log.info("Fetch client by id {}", id);
 
         Client client = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client not found with id: " + id));
 
         return mapClientToClientResponse(client);
     }
@@ -88,15 +109,33 @@ public class ClientServiceImpl implements ClientService {
         log.info("Update client with id {}", id);
 
         Client client = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client not found with id: " + id));
 
-        if (!client.getPhone().equals(dto.getPhone()) && existsByPhone(dto.getPhone())) {
-            throw new AlreadyExistsException("Client with phone '" + dto.getPhone() + "' already exists");
+        if (!client.getPhone().equals(dto.getPhone())
+                && existsByPhone(dto.getPhone())) {
+            throw new AlreadyExistsException(
+                    "Client with phone '" + dto.getPhone() + "' already exists");
+        }
+
+        if (dto.getInn() != null
+                && !dto.getInn().equals(client.getInn())
+                && existsByInn(dto.getInn())) {
+            throw new AlreadyExistsException(
+                    "Client with INN '" + dto.getInn() + "' already exists");
         }
 
         client.setFullName(dto.getFullName());
+        client.setInn(dto.getInn());
         client.setPhone(dto.getPhone());
+        client.setAdditionalPhone(dto.getAdditionalPhone());
         client.setAddress(dto.getAddress());
+        client.setBankName(dto.getBankName());
+        client.setMfo(dto.getMfo());
+        client.setAccountNumber(dto.getAccountNumber());
+        client.setDescription(dto.getDescription());
+
+        client = repository.save(client);
 
         return mapClientToClientResponse(client);
     }
@@ -111,16 +150,25 @@ public class ClientServiceImpl implements ClientService {
         log.info("Delete client with id {}", id);
 
         Client client = repository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + id));
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Client not found with id: " + id));
 
         client.setStatus(Status.DELETED);
+        repository.save(client);
     }
-    private ClientResponse mapClientToClientResponse(Client client){
+
+    private ClientResponse mapClientToClientResponse(Client client) {
         return ClientResponse.builder()
                 .id(client.getId())
                 .fullName(client.getFullName())
+                .inn(client.getInn())
                 .phone(client.getPhone())
+                .additionalPhone(client.getAdditionalPhone())
                 .address(client.getAddress())
+                .bankName(client.getBankName())
+                .mfo(client.getMfo())
+                .accountNumber(client.getAccountNumber())
+                .description(client.getDescription())
                 .status(client.getStatus())
                 .createdAt(client.getCreatedAt())
                 .updatedAt(client.getUpdatedAt())

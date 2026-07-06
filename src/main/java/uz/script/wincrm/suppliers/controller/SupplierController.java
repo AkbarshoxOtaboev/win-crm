@@ -12,10 +12,10 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.security.access.prepost.PreAuthorize;
-import uz.script.wincrm.suppliers.SupplierService;
 import uz.script.wincrm.suppliers.dto.SupplierDTO;
 import uz.script.wincrm.suppliers.dto.SupplierFilterDTO;
 import uz.script.wincrm.suppliers.response.SupplierResponse;
+import uz.script.wincrm.suppliers.service.SupplierService;
 import uz.script.wincrm.utils.RestApiResponse;
 import uz.script.wincrm.utils.Status;
 

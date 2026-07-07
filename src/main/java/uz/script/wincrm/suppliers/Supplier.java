@@ -4,8 +4,12 @@ import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.goods.Goods;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
+import uz.script.wincrm.warehouse.WarehouseOrder;
+
+import java.util.List;
 
 @Entity
 @Table(name = TableName.SUPPLIERS)
@@ -43,4 +47,7 @@ public class Supplier extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @OneToMany(mappedBy = "supplier")
+    private List<WarehouseOrder> warehouseOrders;
 }

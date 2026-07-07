@@ -11,4 +11,7 @@ public interface TableName {
     String GOODS = "goods";
     String GOODS_GROUP = "goods_group";
     String UNIT_TYPES= "unit_types";
+    String WAREHOUSE = "warehouse";
+    String WAREHOUSE_ORDERS = "warehouse_order";
+    String WAREHOUSE_ORDER_ITEMS = "warehouse_order_items";
 }

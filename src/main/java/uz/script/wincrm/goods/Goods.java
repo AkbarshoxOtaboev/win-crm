@@ -9,8 +9,10 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
+import uz.script.wincrm.warehouse.WarehouseOrderItem;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Entity
 @SQLRestriction("status <> 'DELETED'")
@@ -38,10 +40,13 @@ public class Goods extends BaseEntity {
     @Column(nullable = false)
     private BigDecimal priceSelling;
 
-    @Column(nullable = false)
+
     private String barcode;
 
-    @Column(nullable = false)
+
     private String photo;
+
+    @OneToMany(mappedBy = "goods")
+    private List<WarehouseOrderItem> warehouseOrderItems;
 
 }

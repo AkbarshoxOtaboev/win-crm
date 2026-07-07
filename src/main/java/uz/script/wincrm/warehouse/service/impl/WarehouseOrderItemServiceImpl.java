@@ -1,0 +1,198 @@
+package uz.script.wincrm.warehouse.service.impl;
+
+import jakarta.transaction.Transactional;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.cache.annotation.Caching;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import uz.script.wincrm.audit.AuditAction;
+import uz.script.wincrm.audit.Auditable;
+import uz.script.wincrm.exceptions.ResourceNotFoundException;
+import uz.script.wincrm.goods.Goods;
+import uz.script.wincrm.goods.repository.GoodsRepository;
+import uz.script.wincrm.suppliers.Supplier;
+import uz.script.wincrm.suppliers.SupplierRepository;
+import uz.script.wincrm.utils.Status;
+import uz.script.wincrm.warehouse.Warehouse;
+import uz.script.wincrm.warehouse.WarehouseOrder;
+import uz.script.wincrm.warehouse.WarehouseOrderItem;
+import uz.script.wincrm.warehouse.dto.WarehouseOrderItemDTO;
+import uz.script.wincrm.warehouse.mapper.WarehouseOrderItemMapper;
+import uz.script.wincrm.warehouse.repository.WarehouseOrderItemRepository;
+import uz.script.wincrm.warehouse.repository.WarehouseOrderRepository;
+import uz.script.wincrm.warehouse.repository.WarehouseRepository;
+import uz.script.wincrm.warehouse.response.WarehouseOrderItemResponse;
+import uz.script.wincrm.warehouse.service.WarehouseOrderItemService;
+
+import java.math.BigDecimal;
+import java.util.List;
+
+@Service
+@RequiredArgsConstructor
+@Transactional
+@Slf4j
+public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService {
+
+    private final WarehouseOrderItemRepository repository;
+    private final WarehouseRepository warehouseRepository;
+    private final WarehouseOrderRepository warehouseOrderRepository;
+    private final SupplierRepository supplierRepository;
+    private final GoodsRepository goodsRepository;
+    private final WarehouseOrderItemMapper mapper;
+
+    @Override
+    @Auditable(
+            action = AuditAction.CREATE,
+            entity = "WarehouseOrderItem"
+    )
+//    @Caching(evict = {
+//            @CacheEvict(value = "warehouseOrderItems", allEntries = true),
+//            @CacheEvict(value = {"warehouseOrders", "warehouseOrder"}, allEntries = true)
+//    })
+    public WarehouseOrderItemResponse create(WarehouseOrderItemDTO dto) {
+        log.info("Create warehouse order item");
+
+        Warehouse warehouse = findWarehouse(dto.getWarehouseId());
+        WarehouseOrder warehouseOrder = findWarehouseOrder(dto.getWarehouseOrderId());
+        Supplier supplier = findSupplier(dto.getSupplierId());
+        Goods goods = findGoods(dto.getGoodsId());
+
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+
+        WarehouseOrderItem item = mapper.toEntity(dto, warehouse, warehouseOrder, supplier, goods);
+        item.setCreatedUsername(username);
+
+        item = repository.save(item);
+
+        recalculateOrderTotalSum(warehouseOrder);
+
+        return mapper.toResponse(item);
+    }
+
+    @Override
+//    @Cacheable(value = "warehouseOrderItem", key = "#id")
+    public WarehouseOrderItemResponse findById(Long id) {
+        log.info("Fetch warehouse order item by id {}", id);
+
+        WarehouseOrderItem item = repository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Warehouse order item not found with id: " + id));
+
+        return mapper.toResponse(item);
+    }
+
+    @Override
+//    @Cacheable(value = "warehouseOrderItems")
+    public List<WarehouseOrderItemResponse> fetchAllItems() {
+        log.info("Fetch all warehouse order items");
+
+        return repository.findAll()
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Override
+//    @Cacheable(value = "warehouseOrderItemsByOrder", key = "#warehouseOrderId")
+    public List<WarehouseOrderItemResponse> fetchByWarehouseOrderId(Long warehouseOrderId) {
+        log.info("Fetch warehouse order items by order id {}", warehouseOrderId);
+
+        return repository.findAllByWarehouseOrderId(warehouseOrderId)
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    @Auditable(
+            action = AuditAction.UPDATE,
+            entity = "WarehouseOrderItem"
+    )
+//    @Caching(evict = {
+//            @CacheEvict(value = {"warehouseOrderItems", "warehouseOrderItem", "warehouseOrderItemsByOrder"}, allEntries = true),
+//            @CacheEvict(value = {"warehouseOrders", "warehouseOrder"}, allEntries = true)
+//    })
+    public WarehouseOrderItemResponse update(Long id, WarehouseOrderItemDTO dto) {
+        log.info("Update warehouse order item with id {}", id);
+
+        WarehouseOrderItem item = repository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Warehouse order item not found with id: " + id));
+
+        Warehouse warehouse = findWarehouse(dto.getWarehouseId());
+        WarehouseOrder warehouseOrder = findWarehouseOrder(dto.getWarehouseOrderId());
+        Supplier supplier = findSupplier(dto.getSupplierId());
+        Goods goods = findGoods(dto.getGoodsId());
+
+        WarehouseOrder previousOrder = item.getWarehouseOrder();
+
+        mapper.updateEntity(item, dto, warehouse, warehouseOrder, supplier, goods);
+        String username = SecurityContextHolder.getContext().getAuthentication().getName();
+        item.setCreatedUsername(username);
+        item = repository.save(item);
+
+        recalculateOrderTotalSum(warehouseOrder);
+        if (previousOrder != null && !previousOrder.getId().equals(warehouseOrder.getId())) {
+            recalculateOrderTotalSum(previousOrder);
+        }
+
+        return mapper.toResponse(item);
+    }
+
+    @Override
+    @Auditable(
+            action = AuditAction.DELETE,
+            entity = "WarehouseOrderItem"
+    )
+//    @Caching(evict = {
+//            @CacheEvict(value = {"warehouseOrderItems", "warehouseOrderItem", "warehouseOrderItemsByOrder"}, allEntries = true),
+//            @CacheEvict(value = {"warehouseOrders", "warehouseOrder"}, allEntries = true)
+//    })
+    public void delete(Long id) {
+        log.info("Delete warehouse order item with id {}", id);
+
+        WarehouseOrderItem item = repository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Warehouse order item not found with id: " + id));
+
+        item.setStatus(Status.DELETED);
+        repository.save(item);
+
+        recalculateOrderTotalSum(item.getWarehouseOrder());
+    }
+
+    private void recalculateOrderTotalSum(WarehouseOrder warehouseOrder) {
+        List<WarehouseOrderItem> items = repository.findAllByWarehouseOrderId(warehouseOrder.getId());
+
+        BigDecimal total = items.stream()
+                .filter(i -> i.getStatus() == Status.ACTIVE)
+                .map(i -> i.getPriceSelling().multiply(i.getCount()))
+                .reduce(BigDecimal.ZERO, BigDecimal::add);
+
+        warehouseOrder.setTotalSum(total);
+        warehouseOrderRepository.save(warehouseOrder);
+    }
+
+    private Warehouse findWarehouse(Long id) {
+        return warehouseRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse not found with id: " + id));
+    }
+
+    private WarehouseOrder findWarehouseOrder(Long id) {
+        return warehouseOrderRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse order not found with id: " + id));
+    }
+
+    private Supplier findSupplier(Long id) {
+        return supplierRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Supplier not found with id: " + id));
+    }
+
+    private Goods findGoods(Long id) {
+        return goodsRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Goods not found with id: " + id));
+    }
+}

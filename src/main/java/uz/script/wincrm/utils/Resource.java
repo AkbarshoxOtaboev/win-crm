@@ -7,5 +7,8 @@ public enum Resource {
     SUPPLIER,
     UNIT_TYPE,
     GOODS_GROUP,
-    GOODS
+    GOODS,
+    WAREHOUSE,
+    WAREHOUSE_ORDER,
+    WAREHOUSE_ORDER_ITEM
 }

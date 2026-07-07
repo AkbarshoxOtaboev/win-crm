@@ -57,19 +57,16 @@ public class GoodsDTO {
     )
     private BigDecimal priceSelling;
 
-    @NotBlank(message = "Barcode is required")
     @Schema(
             description = "Goods barcode",
-            example = "4870204012345",
-            requiredMode = Schema.RequiredMode.REQUIRED
+            example = "4870204012345"
     )
     private String barcode;
 
     @Schema(
             description = "Goods photo file. Required on create; optional on update (existing photo is kept if omitted).",
             type = "string",
-            format = "binary",
-            requiredMode = Schema.RequiredMode.NOT_REQUIRED
+            format = "binary"
     )
     private MultipartFile photo;
 }

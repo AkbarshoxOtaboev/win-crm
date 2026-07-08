@@ -39,7 +39,7 @@ public class ClientServiceImpl implements ClientService {
             action = AuditAction.CREATE,
             entity = "Client"
     )
-    @CacheEvict(value = "clients", allEntries = true)
+//    @CacheEvict(value = "clients", allEntries = true)
     public ClientResponse create(ClientDTO dto) {
         log.info("Create client");
 
@@ -77,7 +77,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    @Cacheable(value = "client", key = "#id")
+//    @Cacheable(value = "client", key = "#id")
     public ClientResponse findById(Long id) {
         log.info("Fetch client by id {}", id);
 
@@ -89,7 +89,7 @@ public class ClientServiceImpl implements ClientService {
     }
 
     @Override
-    @Cacheable(value = "clients")
+//    @Cacheable(value = "clients")
     public List<ClientResponse> fetchAllClients() {
         log.info("Fetch all clients");
 
@@ -104,7 +104,7 @@ public class ClientServiceImpl implements ClientService {
             action = AuditAction.UPDATE,
             entity = "Client"
     )
-    @CacheEvict(value = {"clients", "client"}, allEntries = true)
+//    @CacheEvict(value = {"clients", "client"}, allEntries = true)
     public ClientResponse update(Long id, ClientDTO dto) {
         log.info("Update client with id {}", id);
 
@@ -145,7 +145,7 @@ public class ClientServiceImpl implements ClientService {
             action = AuditAction.DELETE,
             entity = "Client"
     )
-    @CacheEvict(value = {"clients", "client"}, allEntries = true)
+//    @CacheEvict(value = {"clients", "client"}, allEntries = true)
     public void delete(Long id) {
         log.info("Delete client with id {}", id);
 

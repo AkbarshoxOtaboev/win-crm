@@ -2,6 +2,7 @@ package uz.script.wincrm.clients;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.OneToMany;
 import jakarta.persistence.Table;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,8 +10,12 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.sale.SaleOrder;
+import uz.script.wincrm.sale.SaleOrderItem;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
+
+import java.util.List;
 
 @Entity
 @Table(name = TableName.CLIENTS)
@@ -48,4 +53,10 @@ public class Client extends BaseEntity {
 
     @Column(columnDefinition = "TEXT")
     private String description;
+
+    @OneToMany(mappedBy = "client")
+    private List<SaleOrder> saleOrders;
+
+    @OneToMany(mappedBy = "client")
+    private List<SaleOrderItem> saleOrderItems;
 }

@@ -1,0 +1,56 @@
+package uz.script.wincrm.sale.mapper;
+
+import org.springframework.stereotype.Component;
+import uz.script.wincrm.sale.SaleOrder;
+import uz.script.wincrm.sale.dto.SaleOrderDTO;
+import uz.script.wincrm.sale.response.SaleOrderResponse;
+
+@Component
+public class SaleOrderMapper {
+
+    public SaleOrder toEntity(SaleOrderDTO dto) {
+        if (dto == null) {
+            return null;
+        }
+        return SaleOrder.builder()
+                .comment(dto.getComment())
+                .orderDate(dto.getOrderDate())
+                .totalSum(dto.getTotalSum())
+                .build();
+    }
+
+    public void updateEntity(SaleOrder entity, SaleOrderDTO dto) {
+        if (dto.getComment() != null) {
+            entity.setComment(dto.getComment());
+        }
+        if (dto.getOrderDate() != null) {
+            entity.setOrderDate(dto.getOrderDate());
+        }
+        if (dto.getTotalSum() != null) {
+            entity.setTotalSum(dto.getTotalSum());
+        }
+    }
+
+    public SaleOrderResponse toResponse(SaleOrder entity) {
+        if (entity == null) {
+            return null;
+        }
+        return SaleOrderResponse.builder()
+                .id(entity.getId())
+                .clientId(entity.getClient() != null ? entity.getClient().getId() : null)
+                .clientFullName(entity.getClient() != null ? entity.getClient().getFullName() : null)
+                .warehouseId(entity.getWarehouse() != null ? entity.getWarehouse().getId() : null)
+                .warehouseName(entity.getWarehouse() != null ? entity.getWarehouse().getName() : null)
+                .comment(entity.getComment())
+                .orderDate(entity.getOrderDate())
+                .totalSum(entity.getTotalSum())
+                .paidSum(entity.getPaidSum())
+                .debtSum(entity.getDebtSum())
+                .status(entity.getStatus())
+                .orderStatus(entity.getSalesOrderStatus())
+                .createdAt(entity.getCreatedAt())
+                .updatedAt(entity.getUpdatedAt())
+                .createdUsername(entity.getCreatedUsername())
+                .build();
+    }
+}

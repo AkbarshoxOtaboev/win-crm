@@ -49,7 +49,7 @@ public class GoodsServiceImpl implements GoodsService {
             action = AuditAction.CREATE,
             entity = "Goods"
     )
-    @CacheEvict(value = "goods", allEntries = true)
+//    @CacheEvict(value = "goods", allEntries = true)
     public GoodsResponse create(GoodsDTO dto) {
         log.info("Create goods");
 
@@ -87,7 +87,7 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    @Cacheable(value = "good", key = "#id")
+//    @Cacheable(value = "good", key = "#id")
     public GoodsResponse findById(Long id) {
         log.info("Fetch goods by id {}", id);
 
@@ -99,7 +99,7 @@ public class GoodsServiceImpl implements GoodsService {
     }
 
     @Override
-    @Cacheable(value = "goods")
+//    @Cacheable(value = "goods")
     public List<GoodsResponse> fetchAllGoods() {
         log.info("Fetch all goods");
 
@@ -114,7 +114,7 @@ public class GoodsServiceImpl implements GoodsService {
             action = AuditAction.UPDATE,
             entity = "Goods"
     )
-    @CacheEvict(value = {"goods", "good"}, allEntries = true)
+//    @CacheEvict(value = {"goods", "good"}, allEntries = true)
     public GoodsResponse update(Long id, GoodsDTO dto) {
         log.info("Update goods with id {}", id);
 
@@ -157,7 +157,7 @@ public class GoodsServiceImpl implements GoodsService {
             action = AuditAction.DELETE,
             entity = "Goods"
     )
-    @CacheEvict(value = {"goods", "good"}, allEntries = true)
+//    @CacheEvict(value = {"goods", "good"}, allEntries = true)
     public void delete(Long id) {
         log.info("Delete goods with id {}", id);
 

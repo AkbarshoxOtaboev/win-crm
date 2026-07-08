@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.sale.SaleOrderItem;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 import uz.script.wincrm.warehouse.WarehouseOrderItem;
@@ -48,5 +49,8 @@ public class Goods extends BaseEntity {
 
     @OneToMany(mappedBy = "goods")
     private List<WarehouseOrderItem> warehouseOrderItems;
+
+    @OneToMany(mappedBy = "goods")
+    private List<SaleOrderItem> saleOrderItems;
 
 }

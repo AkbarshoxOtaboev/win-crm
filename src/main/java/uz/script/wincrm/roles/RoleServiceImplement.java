@@ -30,7 +30,7 @@ public class RoleServiceImplement implements RoleService {
     private final PermissionsRepository permissionsRepository;
 
     @Override
-    @CacheEvict(value = "roles", allEntries = true)
+//    @CacheEvict(value = "roles", allEntries = true)
     @Auditable(
             action = AuditAction.CREATE,
             entity = "Role"
@@ -56,7 +56,7 @@ public class RoleServiceImplement implements RoleService {
     }
 
     @Override
-    @Cacheable(value = "roles")
+//    @Cacheable(value = "roles")
     @Auditable(
             action = AuditAction.READ,
             entity = "Role"
@@ -67,7 +67,7 @@ public class RoleServiceImplement implements RoleService {
     }
 
     @Override
-    @Cacheable(value = "roles", key = "#id")
+//    @Cacheable(value = "roles", key = "#id")
     @Auditable(
             action = AuditAction.READ,
             entity = "Role"
@@ -78,7 +78,7 @@ public class RoleServiceImplement implements RoleService {
     }
 
     @Override
-    @CacheEvict(value = "roles", key = "#id")
+//    @CacheEvict(value = "roles", key = "#id")
     @Auditable(
             action = AuditAction.DELETE,
             entity = "Role"
@@ -90,7 +90,7 @@ public class RoleServiceImplement implements RoleService {
     }
 
     @Override
-    @CachePut(value = "roles", key = "#result.id")
+//    @CachePut(value = "roles", key = "#result.id")
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "Role"
@@ -105,7 +105,7 @@ public class RoleServiceImplement implements RoleService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"roles", "permissions"}, allEntries = true)
+//    @CacheEvict(value = {"roles", "permissions"}, allEntries = true)
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "Role"
@@ -129,7 +129,7 @@ public class RoleServiceImplement implements RoleService {
 
     @Override
     @Transactional
-    @CacheEvict(value = {"roles", "permissions"}, allEntries = true)
+//    @CacheEvict(value = {"roles", "permissions"}, allEntries = true)
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "Role"
@@ -152,7 +152,7 @@ public class RoleServiceImplement implements RoleService {
     }
 
     @Override
-    @Cacheable(value = "permissions" ,key = "#roleId")
+//    @Cacheable(value = "permissions" ,key = "#roleId")
     public List<PermissionsResponse> fetchPermissionsByRoleId(Long roleId) {
         log.info("Fetch all permissions by role id {}", roleId);
         return permissionsRepository.findAllByRoleId(roleId)
@@ -162,7 +162,7 @@ public class RoleServiceImplement implements RoleService {
     }
 
     @Override
-    @Cacheable(value = "permissions")
+//    @Cacheable(value = "permissions")
     public List<PermissionsResponse> fetchAllPermissions() {
         log.info("Fetch all permissions");
         return permissionsRepository.findAll()

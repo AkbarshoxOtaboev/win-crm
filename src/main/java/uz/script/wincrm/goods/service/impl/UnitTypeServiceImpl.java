@@ -33,8 +33,8 @@ public class UnitTypeServiceImpl implements UnitTypeService {
      * Unit Type yaratish
      */
     @Override
-    @CachePut(value = "unitTypes", key = "#result.id")
-    @CacheEvict(value = "unitTypeList", allEntries = true)
+//    @CachePut(value = "unitTypes", key = "#result.id")
+//    @CacheEvict(value = "unitTypeList", allEntries = true)
     public UnitTypeResponse create(UnitTypeDTO dto) {
 
         if (repository.existsByNameIgnoreCase(dto.getName())) {
@@ -53,8 +53,8 @@ public class UnitTypeServiceImpl implements UnitTypeService {
      * Unit Type yangilash
      */
     @Override
-    @CachePut(value = "unitTypes", key = "#id")
-    @CacheEvict(value = "unitTypeList", allEntries = true)
+//    @CachePut(value = "unitTypes", key = "#id")
+//    @CacheEvict(value = "unitTypeList", allEntries = true)
     public UnitTypeResponse update(Long id, UnitTypeDTO dto) {
 
         UnitType entity = repository.findById(id)
@@ -78,7 +78,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
      * Unit Type o'chirish
      */
     @Override
-    @CacheEvict(value = {"unitTypes", "unitTypeList"}, key = "#id", allEntries = true)
+//    @CacheEvict(value = {"unitTypes", "unitTypeList"}, key = "#id", allEntries = true)
     public void delete(Long id) {
 
         UnitType entity = repository.findById(id)
@@ -94,7 +94,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
      */
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "unitTypes", key = "#id")
+//    @Cacheable(value = "unitTypes", key = "#id")
     public UnitTypeResponse getById(Long id) {
 
         UnitType entity = repository.findById(id)
@@ -109,7 +109,7 @@ public class UnitTypeServiceImpl implements UnitTypeService {
      */
     @Override
     @Transactional(readOnly = true)
-    @Cacheable("unitTypeList")
+//    @Cacheable("unitTypeList")
     public List<UnitTypeResponse> getAll() {
 
         return repository.findAll()

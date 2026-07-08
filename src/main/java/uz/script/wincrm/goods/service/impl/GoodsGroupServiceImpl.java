@@ -30,8 +30,8 @@ public class GoodsGroupServiceImpl implements GoodsGroupService {
     private final GoodsGroupMapper mapper;
 
     @Override
-    @CachePut(value = "goodsGroups", key = "#result.id")
-    @CacheEvict(value = "goodsGroupList", allEntries = true)
+//    @CachePut(value = "goodsGroups", key = "#result.id")
+//    @CacheEvict(value = "goodsGroupList", allEntries = true)
     public GoodsGroupResponse create(GoodsGroupDTO dto) {
 
         if (repository.existsByNameIgnoreCase(dto.getName())) {
@@ -49,8 +49,8 @@ public class GoodsGroupServiceImpl implements GoodsGroupService {
     }
 
     @Override
-    @CachePut(value = "goodsGroups", key = "#id")
-    @CacheEvict(value = "goodsGroupList", allEntries = true)
+//    @CachePut(value = "goodsGroups", key = "#id")
+//    @CacheEvict(value = "goodsGroupList", allEntries = true)
     public GoodsGroupResponse update(Long id, GoodsGroupDTO dto) {
 
         GoodsGroup entity = repository.findById(id)
@@ -71,7 +71,7 @@ public class GoodsGroupServiceImpl implements GoodsGroupService {
     }
 
     @Override
-    @CacheEvict(value = {"goodsGroups", "goodsGroupList"}, allEntries = true)
+//    @CacheEvict(value = {"goodsGroups", "goodsGroupList"}, allEntries = true)
     public void delete(Long id) {
 
         GoodsGroup entity = repository.findById(id)
@@ -84,7 +84,7 @@ public class GoodsGroupServiceImpl implements GoodsGroupService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable(value = "goodsGroups", key = "#id")
+//    @Cacheable(value = "goodsGroups", key = "#id")
     public GoodsGroupResponse getById(Long id) {
 
         GoodsGroup entity = repository.findById(id)
@@ -96,7 +96,7 @@ public class GoodsGroupServiceImpl implements GoodsGroupService {
 
     @Override
     @Transactional(readOnly = true)
-    @Cacheable("goodsGroupList")
+//    @Cacheable("goodsGroupList")
     public List<GoodsGroupResponse> getAll() {
 
         return repository.findAll()

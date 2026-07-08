@@ -27,9 +27,11 @@ public abstract class BaseEntity {
 
     @UpdateTimestamp(source = SourceType.DB)
     private LocalDateTime updatedAt;
+
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
     @Builder.Default
     private Status status = Status.ACTIVE;
+
     private String createdUsername;
 }

@@ -13,6 +13,7 @@ import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.goods.Goods;
 import uz.script.wincrm.goods.repository.GoodsRepository;
+import uz.script.wincrm.stock.service.StockService;
 import uz.script.wincrm.suppliers.Supplier;
 import uz.script.wincrm.suppliers.SupplierRepository;
 import uz.script.wincrm.utils.Status;
@@ -42,6 +43,7 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
     private final SupplierRepository supplierRepository;
     private final GoodsRepository goodsRepository;
     private final WarehouseOrderItemMapper mapper;
+    private final StockService stockService;
 
     @Override
     @Auditable(
@@ -52,6 +54,7 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 //            @CacheEvict(value = "warehouseOrderItems", allEntries = true),
 //            @CacheEvict(value = {"warehouseOrders", "warehouseOrder"}, allEntries = true)
 //    })
+    @Transactional
     public WarehouseOrderItemResponse create(WarehouseOrderItemDTO dto) {
         log.info("Create warehouse order item");
 
@@ -66,7 +69,8 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
         item.setCreatedUsername(username);
 
         item = repository.save(item);
-
+        // Omborga mahsulot kirim qilindi -> Stockga yozamiz (Stock + StockHistory avtomatik)
+        stockService.increaseStock(dto.getGoodsId(), dto.getWarehouseId(), dto.getCount());
         recalculateOrderTotalSum(warehouseOrder);
 
         return mapper.toResponse(item);
@@ -115,6 +119,7 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 //            @CacheEvict(value = {"warehouseOrderItems", "warehouseOrderItem", "warehouseOrderItemsByOrder"}, allEntries = true),
 //            @CacheEvict(value = {"warehouseOrders", "warehouseOrder"}, allEntries = true)
 //    })
+    @Transactional
     public WarehouseOrderItemResponse update(Long id, WarehouseOrderItemDTO dto) {
         log.info("Update warehouse order item with id {}", id);
 
@@ -129,10 +134,20 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 
         WarehouseOrder previousOrder = item.getWarehouseOrder();
 
+        // Stockni to'g'irlash uchun ESKI qiymatlarni mapper ustidan yozib yuborishidan oldin saqlab qolamiz
+        Long previousGoodsId = item.getGoods().getId();
+        Long previousWarehouseId = item.getWarehouse().getId();
+        BigDecimal previousCount = item.getCount();
+
         mapper.updateEntity(item, dto, warehouse, warehouseOrder, supplier, goods);
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         item.setCreatedUsername(username);
         item = repository.save(item);
+
+        // Eski goods/warehouse bo'yicha qo'shilgan miqdorni Stockdan ayiramiz (chiqim)
+        stockService.decreaseStock(previousGoodsId, previousWarehouseId, previousCount);
+        // Yangi goods/warehouse/count bo'yicha qayta Stockga qo'shamiz (kirim)
+        stockService.increaseStock(dto.getGoodsId(), dto.getWarehouseId(), dto.getCount());
 
         recalculateOrderTotalSum(warehouseOrder);
         if (previousOrder != null && !previousOrder.getId().equals(warehouseOrder.getId())) {
@@ -141,7 +156,6 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 
         return mapper.toResponse(item);
     }
-
     @Override
     @Auditable(
             action = AuditAction.DELETE,

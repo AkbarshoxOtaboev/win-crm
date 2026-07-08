@@ -14,4 +14,10 @@ public interface TableName {
     String WAREHOUSE = "warehouse";
     String WAREHOUSE_ORDERS = "warehouse_order";
     String WAREHOUSE_ORDER_ITEMS = "warehouse_order_items";
+    String SALE_ORDERS = "sale_orders";
+    String SALE_ORDER_ITEMS = "sale_order_items";
+    String STOCKS = "stocks";
+    String STOCK_HISTORIES = "stock_histories";
+    String PAYMENT_TYPES = "payment_types";
+    String PAYMENTS = "payments";
 }

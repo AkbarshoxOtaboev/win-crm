@@ -37,9 +37,9 @@ public class UserServiceImplement implements UserService {
     private final StorageService storageService;
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = "users", allEntries = true)
-    })
+//    @Caching(evict = {
+//            @CacheEvict(value = "users", allEntries = true)
+//    })
     @Auditable(
             action = AuditAction.CREATE,
             entity = "User"
@@ -90,7 +90,7 @@ public class UserServiceImplement implements UserService {
     }
 
     @Override
-    @Cacheable(value = "user", key = "#id")
+//    @Cacheable(value = "user", key = "#id")
     public UserResponse findById(Long id) {
 
         log.info("Find user by id {}", id);
@@ -103,7 +103,7 @@ public class UserServiceImplement implements UserService {
     }
 
     @Override
-    @Cacheable(value = "users")
+//    @Cacheable(value = "users")
     public List<UserResponse> fetchAllUsers() {
 
         log.info("Fetch all users");
@@ -115,10 +115,10 @@ public class UserServiceImplement implements UserService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = "user", key = "#id"),
-            @CacheEvict(value = "users", allEntries = true)
-    })
+//    @Caching(evict = {
+//            @CacheEvict(value = "user", key = "#id"),
+//            @CacheEvict(value = "users", allEntries = true)
+//    })
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "User"
@@ -162,10 +162,10 @@ public class UserServiceImplement implements UserService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = "user", key = "#id"),
-            @CacheEvict(value = "users", allEntries = true)
-    })
+//    @Caching(evict = {
+//            @CacheEvict(value = "user", key = "#id"),
+//            @CacheEvict(value = "users", allEntries = true)
+//    })
     @Auditable(
             action = AuditAction.DELETE,
             entity = "User"
@@ -184,10 +184,10 @@ public class UserServiceImplement implements UserService {
     }
 
     @Override
-    @Caching(evict = {
-            @CacheEvict(value = "user", key = "#id"),
-            @CacheEvict(value = "users", allEntries = true)
-    })
+//    @Caching(evict = {
+//            @CacheEvict(value = "user", key = "#id"),
+//            @CacheEvict(value = "users", allEntries = true)
+//    })
     @Auditable(
             action = AuditAction.UPDATE,
             entity = "User"

@@ -15,6 +15,6 @@ public enum Resource {
     SALE_ORDER_ITEM,
     PAYMENT_TYPE,
     PAYMENT,
-    STOCKS,
+    STOCK,
     STOCK_HISTORIES
 }

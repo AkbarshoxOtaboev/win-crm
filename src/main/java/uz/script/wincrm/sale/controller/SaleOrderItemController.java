@@ -18,9 +18,11 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.dto.SaleOrderItemDTO;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
 import uz.script.wincrm.sale.service.SaleOrderItemService;
+import uz.script.wincrm.utils.PeriodType;
 import uz.script.wincrm.utils.RestApiResponse;
 
 import java.time.LocalDateTime;
@@ -259,6 +261,44 @@ public class SaleOrderItemController {
                 RestApiResponse.<Page<SaleOrderItemResponse>>builder()
                         .message("Sale order items for goods fetched successfully")
                         .data(service.fetchByGoodsId(goodsId, pageable))
+                        .build()
+        );
+    }
+
+    @GetMapping("/filter")
+    @PreAuthorize("hasAuthority('SALE_ORDER_ITEM_VIEW')")
+    @Operation(
+            summary = "Filter sale order items by goods type and period",
+            description = """
+                    Goods.type (PRODUCT / SERVICE / WINDOW) va davr (DAILY / WEEKLY / MONTHLY)
+                    bo'yicha filtrlaydi.
+                    
+                    - DAILY: bugungi kun boshidan hozirgacha
+                    - WEEKLY: shu haftaning dushanbasidan hozirgacha
+                    - MONTHLY: shu oyning 1-kunidan hozirgacha
+                    
+                    Only users with SALE_ORDER_ITEM_VIEW permission can use this endpoint.
+                    """
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Page.class)
+            )
+    )
+    public ResponseEntity<?> filterByGoodsTypeAndPeriod(
+            @Parameter(description = "Goods type", example = "PRODUCT")
+            @RequestParam Type type,
+            @Parameter(description = "Period", example = "DAILY")
+            @RequestParam PeriodType period,
+            @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                RestApiResponse.<Page<SaleOrderItemResponse>>builder()
+                        .message("Sale order items filtered successfully")
+                        .data(service.fetchByGoodsTypeAndPeriod(type, period, pageable))
                         .build()
         );
     }

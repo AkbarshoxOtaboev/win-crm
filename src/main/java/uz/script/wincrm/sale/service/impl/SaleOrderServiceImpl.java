@@ -20,6 +20,8 @@ import uz.script.wincrm.sale.mapper.SaleOrderMapper;
 import uz.script.wincrm.sale.repository.SaleOrderRepository;
 import uz.script.wincrm.sale.response.SaleOrderResponse;
 import uz.script.wincrm.sale.service.SaleOrderService;
+import uz.script.wincrm.users.User;
+import uz.script.wincrm.users.UserRepository;
 import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.repository.WarehouseRepository;
@@ -38,6 +40,7 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     private final SaleOrderMapper mapper;
     private final ClientRepository clientRepository;
     private final WarehouseRepository warehouseRepository;
+    private final UserRepository userRepository;
 
     @Override
     @Auditable(
@@ -57,14 +60,14 @@ public class SaleOrderServiceImpl implements SaleOrderService {
                     .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + dto.getClientId()));
         }
 
-        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+        User currentUser = getCurrentUser();
 
         SaleOrder entity = mapper.toEntity(dto);
         entity.setClient(client);
         entity.setTotalSum(dto.getTotalSum());
         entity.setWarehouse(warehouse);
+        entity.setUser(currentUser);
         entity.setStatus(Status.ACTIVE);
-        entity.setCreatedUsername(username);
         entity.setSalesOrderStatus(SalesOrderStatus.NEW);
 
         entity = repository.save(entity);
@@ -109,6 +112,14 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     }
 
     @Override
+    public Page<SaleOrderResponse> fetchByUserId(Long userId, Pageable pageable) {
+        log.info("Fetch sale orders by user id {}", userId);
+
+        return repository.findByUserId(userId, pageable)
+                .map(mapper::toResponse);
+    }
+
+    @Override
     public List<SaleOrderResponse> fetchByDateRange(LocalDateTime startDate, LocalDateTime endDate) {
         log.info("Fetch sale orders by date range {} - {}", startDate, endDate);
 
@@ -143,8 +154,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
         }
 
         mapper.updateEntity(entity, dto);
-        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
-        entity.setCreatedUsername(username);
 
         entity = repository.save(entity);
 
@@ -183,5 +192,16 @@ public class SaleOrderServiceImpl implements SaleOrderService {
         }
         entity.setSalesOrderStatus(salesOrderStatus);
         repository.save(entity);
+    }
+
+    /**
+     * Joriy autentifikatsiyadan o'tgan foydalanuvchini (User entity) qaytaradi.
+     * SecurityContext'dagi authentication.getName() odatda username bo'ladi.
+     */
+    private User getCurrentUser() {
+        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
+
+        return userRepository.findByUsername(username)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with username: " + username));
     }
 }

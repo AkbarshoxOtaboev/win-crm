@@ -53,9 +53,6 @@ public class ClientServiceImpl implements ClientService {
                     "Client with INN '" + dto.getInn() + "' already exists");
         }
 
-        String username = Objects.requireNonNull(
-                SecurityContextHolder.getContext().getAuthentication()
-        ).getName();
 
         Client client = Client.builder()
                 .fullName(dto.getFullName())
@@ -68,7 +65,6 @@ public class ClientServiceImpl implements ClientService {
                 .accountNumber(dto.getAccountNumber())
                 .description(dto.getDescription())
                 .status(Status.ACTIVE)
-                .createdUsername(username)
                 .build();
 
         client = repository.save(client);

@@ -43,11 +43,9 @@ public class PaymentTypeServiceImpl implements PaymentTypeService {
                     throw new BadRequestException("Payment type already exists with name: " + dto.getName());
                 });
 
-        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
 
         PaymentType entity = mapper.toEntity(dto);
         entity.setStatus(Status.ACTIVE);
-        entity.setCreatedUsername(username);
 
         entity = repository.save(entity);
 

@@ -3,8 +3,10 @@ package uz.script.wincrm.sale.service;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import uz.script.wincrm.exceptions.InsufficientStockException;
+import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.dto.SaleOrderItemDTO;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
+import uz.script.wincrm.utils.PeriodType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -44,4 +46,6 @@ public interface SaleOrderItemService {
      * @throws InsufficientStockException agar stock yetarli bo'lmasa
      */
     void validateAndCheckStock(Long warehouseId, Long goodsId, BigDecimal requestedCount);
+
+    Page<SaleOrderItemResponse> fetchByGoodsTypeAndPeriod(Type type, PeriodType period, Pageable pageable);
 }

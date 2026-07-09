@@ -42,12 +42,10 @@ public class RoleServiceImplement implements RoleService {
         if (roleRepository.existsRoleByName(dto.getName())) {
             throw new AlreadyExistsException("Role already exists with name: " + dto.getName());
         }
-        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
 
         Role role = Role.builder()
                 .name(dto.getName())
                 .status(Status.ACTIVE)
-                .createdUsername(username)
                 .build();
 
         Role savedRole = roleRepository.save(role);

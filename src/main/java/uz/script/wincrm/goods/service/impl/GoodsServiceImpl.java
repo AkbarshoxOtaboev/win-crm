@@ -3,9 +3,6 @@ package uz.script.wincrm.goods.service.impl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
@@ -25,7 +22,6 @@ import uz.script.wincrm.storage.StorageService;
 import uz.script.wincrm.utils.Status;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -72,14 +68,11 @@ public class GoodsServiceImpl implements GoodsService {
                         new ResourceNotFoundException(
                                 "Unit type not found with id: " + dto.getUnitTypeId()));
 
-        String username = Objects.requireNonNull(
-                SecurityContextHolder.getContext().getAuthentication()
-        ).getName();
+
 
         String photoPath = "/api/files/" + storageService.uploadFile(dto.getPhoto());
 
         Goods goods = mapper.toEntity(dto, goodsGroup, unitType, photoPath);
-        goods.setCreatedUsername(username);
 
         goods = repository.save(goods);
 
@@ -145,8 +138,7 @@ public class GoodsServiceImpl implements GoodsService {
         }
 
         mapper.updateEntity(goods, dto, goodsGroup, unitType, photoPath);
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        goods.setCreatedUsername(username);
+
         goods = repository.save(goods);
 
         return mapper.toResponse(goods);

@@ -41,6 +41,8 @@ public class SaleOrderMapper {
                 .clientFullName(entity.getClient() != null ? entity.getClient().getFullName() : null)
                 .warehouseId(entity.getWarehouse() != null ? entity.getWarehouse().getId() : null)
                 .warehouseName(entity.getWarehouse() != null ? entity.getWarehouse().getName() : null)
+                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
+                .userFullName(entity.getUser() != null ? entity.getUser().getFullName() : null)
                 .comment(entity.getComment())
                 .orderDate(entity.getOrderDate())
                 .totalSum(entity.getTotalSum())
@@ -50,7 +52,7 @@ public class SaleOrderMapper {
                 .orderStatus(entity.getSalesOrderStatus())
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
-                .createdUsername(entity.getCreatedUsername())
+                .createdBy(entity.getCreatedUserId())
                 .build();
     }
 }

@@ -164,6 +164,34 @@ public class SaleOrderController {
         );
     }
 
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAuthority('SALE_ORDER_VIEW')")
+    @Operation(
+            summary = "Fetch sale orders by user",
+            description = "Only users with SALE_ORDER_VIEW permission can use this endpoint. " +
+                    "Returns sale orders placed by the given user (salesperson)."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = Page.class)
+            )
+    )
+    public ResponseEntity<?> fetchByUserId(
+            @Parameter(description = "User ID", example = "1")
+            @PathVariable Long userId,
+            @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                RestApiResponse.<Page<SaleOrderResponse>>builder()
+                        .message("Sale orders for user fetched successfully")
+                        .data(service.fetchByUserId(userId, pageable))
+                        .build()
+        );
+    }
+
     @GetMapping("/date-range")
     @PreAuthorize("hasAuthority('SALE_ORDER_VIEW')")
     @Operation(

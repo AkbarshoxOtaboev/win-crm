@@ -21,6 +21,8 @@ public interface SaleOrderService {
 
     Page<SaleOrderResponse> fetchByWarehouseId(Long warehouseId, Pageable pageable);
 
+    Page<SaleOrderResponse> fetchByUserId(Long userId, Pageable pageable);
+
     List<SaleOrderResponse> fetchByDateRange(LocalDateTime startDate, LocalDateTime endDate);
 
     SaleOrderResponse update(Long id, SaleOrderDTO dto);

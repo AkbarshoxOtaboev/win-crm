@@ -16,6 +16,7 @@ public class GoodsMapper {
                 .name(dto.getName())
                 .goodsGroup(goodsGroup)
                 .unitType(unitType)
+                .type(dto.getType())
                 .priceCost(dto.getPriceCost())
                 .priceSelling(dto.getPriceSelling())
                 .barcode(dto.getBarcode())
@@ -28,6 +29,9 @@ public class GoodsMapper {
         goods.setName(dto.getName());
         goods.setGoodsGroup(goodsGroup);
         goods.setUnitType(unitType);
+        if (dto.getType() != null) {
+            goods.setType(dto.getType());
+        }
         goods.setPriceCost(dto.getPriceCost());
         goods.setPriceSelling(dto.getPriceSelling());
         goods.setBarcode(dto.getBarcode());
@@ -44,6 +48,8 @@ public class GoodsMapper {
                 .goodsGroupName(goods.getGoodsGroup() != null ? goods.getGoodsGroup().getName() : null)
                 .unitTypeId(goods.getUnitType() != null ? goods.getUnitType().getId() : null)
                 .unitTypeName(goods.getUnitType() != null ? goods.getUnitType().getName() : null)
+                .type(goods.getType())
+                .typeLabel(goods.getType() != null ? goods.getType().getLabel() : null)
                 .priceCost(goods.getPriceCost())
                 .priceSelling(goods.getPriceSelling())
                 .barcode(goods.getBarcode())

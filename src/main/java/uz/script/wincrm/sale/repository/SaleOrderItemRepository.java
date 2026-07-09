@@ -6,6 +6,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.SaleOrderItem;
 
 import java.math.BigDecimal;
@@ -42,5 +43,17 @@ public interface SaleOrderItemRepository extends JpaRepository<SaleOrderItem, Lo
     Optional<SaleOrderItem> findBySaleOrderIdAndGoodsId(
             @Param("saleOrderId") Long saleOrderId,
             @Param("goodsId") Long goodsId
+    );
+
+    /**
+     * Goods.type va berilgan sana oralig'i (kunlik/haftalik/oylik) bo'yicha filtrlaydi.
+     */
+    @Query("SELECT soi FROM SaleOrderItem soi " +
+            "WHERE soi.goods.type = :type AND soi.arrivalDate BETWEEN :startDate AND :endDate")
+    Page<SaleOrderItem> findByGoodsTypeAndArrivalDateBetween(
+            @Param("type") Type type,
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
     );
 }

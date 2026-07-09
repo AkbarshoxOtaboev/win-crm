@@ -69,14 +69,12 @@ public class PaymentServiceImpl implements PaymentService {
             }
         }
 
-        String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
 
         Payment entity = mapper.toEntity(dto);
         entity.setClient(client);
         entity.setSaleOrder(saleOrder);
         entity.setPaymentType(paymentType);
         entity.setStatus(Status.ACTIVE);
-        entity.setCreatedUsername(username);
 
         entity = repository.save(entity);
 

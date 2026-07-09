@@ -10,6 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.clients.Client;
 import uz.script.wincrm.payment.Payment;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
+import uz.script.wincrm.users.User;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 import uz.script.wincrm.warehouse.Warehouse;
@@ -35,6 +36,10 @@ public class SaleOrder extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "warehouse_id", nullable = false)
     private Warehouse warehouse;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
 
     private String comment;
 

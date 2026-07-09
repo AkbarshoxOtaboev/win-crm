@@ -16,6 +16,7 @@ import uz.script.wincrm.clients.ClientRepository;
 import uz.script.wincrm.exceptions.InsufficientStockException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.goods.Goods;
+import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.goods.repository.GoodsRepository;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.sale.SaleOrderItem;
@@ -26,11 +27,13 @@ import uz.script.wincrm.sale.repository.SaleOrderRepository;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
 import uz.script.wincrm.sale.service.SaleOrderItemService;
 import uz.script.wincrm.stock.service.StockService;
+import uz.script.wincrm.utils.PeriodType;
 import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.repository.WarehouseRepository;
 
 import java.math.BigDecimal;
+import java.time.DayOfWeek;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -74,7 +77,6 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         SaleOrder saleOrder = saleOrderRepository.findById(dto.getSaleOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + dto.getSaleOrderId()));
 
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
 
         SaleOrderItem entity = mapper.toEntity(dto);
         entity.setGoods(goods);
@@ -82,7 +84,6 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         entity.setClient(client);
         entity.setSaleOrder(saleOrder);
         entity.setStatus(Status.ACTIVE);
-        entity.setCreatedUsername(username);
 
         entity = repository.save(entity);
         // Ombordan mahsulot sotildi -> Stockdan chiqim qilamiz (Stock + StockHistory OUT avtomatik)
@@ -268,5 +269,31 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         }
 
         log.info("Stock validation passed successfully");
+    }
+
+
+    @Override
+    public Page<SaleOrderItemResponse> fetchByGoodsTypeAndPeriod(Type type, PeriodType period, Pageable pageable) {
+        log.info("Filter sale order items by goods type {} and period {}", type, period);
+
+        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime startDate = resolvePeriodStart(period, now);
+
+        return repository.findByGoodsTypeAndArrivalDateBetween(type, startDate, now, pageable)
+                .map(mapper::toResponse);
+    }
+
+    /**
+     * DAILY / WEEKLY / MONTHLY davr uchun boshlanish sanasini hisoblaydi.
+     * DAILY   -> bugungi kun 00:00
+     * WEEKLY  -> shu haftaning dushanbasi 00:00
+     * MONTHLY -> shu oyning 1-kuni 00:00
+     */
+    private LocalDateTime resolvePeriodStart(PeriodType period, LocalDateTime now) {
+        return switch (period) {
+            case DAILY -> now.toLocalDate().atStartOfDay();
+            case WEEKLY -> now.toLocalDate().with(DayOfWeek.MONDAY).atStartOfDay();
+            case MONTHLY -> now.toLocalDate().withDayOfMonth(1).atStartOfDay();
+        };
     }
 }

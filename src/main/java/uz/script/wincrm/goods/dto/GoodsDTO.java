@@ -7,6 +7,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.web.multipart.MultipartFile;
+import uz.script.wincrm.goods.enums.Type;
 
 import java.math.BigDecimal;
 
@@ -38,6 +39,14 @@ public class GoodsDTO {
             requiredMode = Schema.RequiredMode.REQUIRED
     )
     private Long unitTypeId;
+
+    @NotNull(message = "Type is required")
+    @Schema(
+            description = "Goods type",
+            example = "PRODUCT",
+            requiredMode = Schema.RequiredMode.REQUIRED
+    )
+    private Type type;
 
     @NotNull(message = "Price cost is required")
     @DecimalMin(value = "0.0", inclusive = true, message = "Price cost must not be negative")

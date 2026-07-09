@@ -60,10 +60,6 @@ public class UserServiceImplement implements UserService {
             throw new BadRequestException("One or more roles not found");
         }
 
-        String createdUsername = SecurityContextHolder
-                .getContext()
-                .getAuthentication()
-                .getName();
 
         String photoLink = null;
 
@@ -79,7 +75,6 @@ public class UserServiceImplement implements UserService {
                 .roles(roles)
                 .photoLink(photoLink)
                 .status(Status.ACTIVE)
-                .createdUsername(createdUsername)
                 .build();
 
         repository.save(user);

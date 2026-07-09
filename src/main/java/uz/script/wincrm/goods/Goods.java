@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.SaleOrderItem;
 import uz.script.wincrm.stock.Stock;
 import uz.script.wincrm.stock.StockHistory;
@@ -36,6 +37,9 @@ public class Goods extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "unit_type_id", nullable = false)
     private UnitType unitType;
+
+    @Enumerated(EnumType.STRING)
+    private Type type;
 
     @Column(nullable = false)
     private BigDecimal priceCost;

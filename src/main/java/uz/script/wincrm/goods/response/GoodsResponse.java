@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.utils.Status;
 
 import java.math.BigDecimal;
@@ -52,6 +53,19 @@ public class GoodsResponse {
     private String unitTypeName;
 
     @Schema(
+            description = "Goods type",
+            example = "PRODUCT",
+            implementation = Type.class
+    )
+    private Type type;
+
+    @Schema(
+            description = "Goods type human-readable label",
+            example = "Tovar"
+    )
+    private String typeLabel;
+
+    @Schema(
             description = "Cost price",
             example = "8500.00"
     )
@@ -94,6 +108,11 @@ public class GoodsResponse {
     )
     private LocalDateTime updatedAt;
 
+    @Schema(
+            description = "ID of the user who created the goods",
+            example = "1"
+    )
+    private Long createdBy;
     @Schema(
             description = "Username of the user who created the goods",
             example = "admin"

@@ -17,6 +17,8 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
 
     Page<SaleOrder> findByClientId(Long clientId, Pageable pageable);
 
+    Page<SaleOrder> findByUserId(Long userId, Pageable pageable);
+
     Page<SaleOrder> findByWarehouseId(Long warehouseId, Pageable pageable);
 
     List<SaleOrder> findByOrderDateBetween(LocalDateTime startDate, LocalDateTime endDate);

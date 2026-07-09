@@ -31,6 +31,12 @@ public class SaleOrderResponse {
     @Schema(description = "Warehouse name", example = "Central Warehouse")
     private String warehouseName;
 
+    @Schema(description = "ID of the user (salesperson) who placed the order", example = "1")
+    private Long userId;
+
+    @Schema(description = "Full name of the user (salesperson) who placed the order", example = "Ali Valiyev")
+    private String userFullName;
+
     @Schema(description = "Comment/Notes about the sale order")
     private String comment;
 
@@ -58,6 +64,6 @@ public class SaleOrderResponse {
     @Schema(description = "Date and time when the sale order was last updated", example = "2026-07-04T11:45:30")
     private LocalDateTime updatedAt;
 
-    @Schema(description = "Username of the user who created the sale order", example = "admin")
-    private String createdUsername;
+    @Schema(description = "ID of the user who created the sale order record", example = "1")
+    private Long createdBy;
 }

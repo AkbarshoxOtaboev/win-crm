@@ -8,10 +8,12 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.roles.Role;
+import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Set;
 
 @Entity
@@ -39,4 +41,7 @@ public class User extends BaseEntity {
     )
     private Set<Role> roles;
     private LocalDateTime lastLogin;
+
+    @OneToMany(mappedBy = "user")
+    private List<SaleOrder> saleOrderList;
 }

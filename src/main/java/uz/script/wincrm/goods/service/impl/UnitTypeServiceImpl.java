@@ -42,8 +42,6 @@ public class UnitTypeServiceImpl implements UnitTypeService {
         }
 
         UnitType entity = mapper.toEntity(dto);
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        entity.setCreatedUsername(username);
         entity = repository.save(entity);
 
         return mapper.toResponse(entity);

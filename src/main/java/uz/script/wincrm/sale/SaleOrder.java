@@ -8,6 +8,7 @@ import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.clients.Client;
+import uz.script.wincrm.payment.Payment;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
@@ -52,4 +53,7 @@ public class SaleOrder extends BaseEntity {
 
     @OneToMany(mappedBy = "saleOrder")
     private List<SaleOrderItem> saleOrderItems;
+
+    @OneToMany(mappedBy = "saleOrder")
+    private List<Payment> payments;
 }

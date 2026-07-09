@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.payment.Payment;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.sale.SaleOrderItem;
 import uz.script.wincrm.utils.BaseEntity;
@@ -59,4 +60,7 @@ public class Client extends BaseEntity {
 
     @OneToMany(mappedBy = "client")
     private List<SaleOrderItem> saleOrderItems;
+
+    @OneToMany(mappedBy = "client")
+    private List<Payment> payments;
 }

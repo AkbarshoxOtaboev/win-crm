@@ -1,6 +1,7 @@
 package uz.script.wincrm.exceptions;
 
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.dao.InvalidDataAccessApiUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
@@ -38,6 +39,17 @@ public class GlobalExceptionHandler {
         return ResponseEntity.badRequest().body(errors);
     }
 
+    // invalid sort/pageable property (e.g. ?sort=string)
+    @ExceptionHandler(InvalidDataAccessApiUsageException.class)
+    public ResponseEntity<ErrorResponse> handleInvalidSort(
+            InvalidDataAccessApiUsageException ex,
+            HttpServletRequest request
+    ) {
+        String message = "Noto'g'ri 'sort' maydoni yuborildi. Mavjud maydonlardan birini tanlang, "
+                + "masalan: id, createdAt, updatedAt.";
+
+        return buildResponse(message, HttpStatus.BAD_REQUEST, request);
+    }
 
     // resource not found
     @ExceptionHandler(ResourceNotFoundException.class)
@@ -100,9 +112,6 @@ public class GlobalExceptionHandler {
         return buildResponse(ex.getMessage(), HttpStatus.INTERNAL_SERVER_ERROR, request);
     }
 
-
-
-
     private ResponseEntity<ErrorResponse> buildResponse(
             String message,
             HttpStatus status,
@@ -119,4 +128,3 @@ public class GlobalExceptionHandler {
         return new ResponseEntity<>(response, status);
     }
 }
-

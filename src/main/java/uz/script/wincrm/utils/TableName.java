@@ -20,4 +20,6 @@ public interface TableName {
     String STOCK_HISTORIES = "stock_histories";
     String PAYMENT_TYPES = "payment_types";
     String PAYMENTS = "payments";
+    String EXPENSE = "expenses";
+    String EXPENSE_CATEGORY = "expense_categories";
 }

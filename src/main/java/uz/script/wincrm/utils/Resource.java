@@ -16,5 +16,7 @@ public enum Resource {
     PAYMENT_TYPE,
     PAYMENT,
     STOCK,
-    STOCK_HISTORIES
+    STOCK_HISTORIES,
+    EXPENSE,
+    EXPENSE_CATEGORY
 }

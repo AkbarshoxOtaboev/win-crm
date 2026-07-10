@@ -10,7 +10,7 @@ public interface TableName {
     String SUPPLIERS = "suppliers";
     String GOODS = "goods";
     String GOODS_GROUP = "goods_group";
-    String UNIT_TYPES= "unit_types";
+    String UNIT_TYPES = "unit_types";
     String WAREHOUSE = "warehouse";
     String WAREHOUSE_ORDERS = "warehouse_order";
     String WAREHOUSE_ORDER_ITEMS = "warehouse_order_items";
@@ -22,4 +22,5 @@ public interface TableName {
     String PAYMENTS = "payments";
     String EXPENSE = "expenses";
     String EXPENSE_CATEGORY = "expense_categories";
+    String COMPANY_DETAIL = "company_detail";
 }

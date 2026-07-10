@@ -18,5 +18,6 @@ public enum Resource {
     STOCK,
     STOCK_HISTORIES,
     EXPENSE,
-    EXPENSE_CATEGORY
+    EXPENSE_CATEGORY,
+    COMPANY_DETAIL
 }

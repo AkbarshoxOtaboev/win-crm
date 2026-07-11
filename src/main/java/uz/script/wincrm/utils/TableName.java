@@ -23,4 +23,5 @@ public interface TableName {
     String EXPENSE = "expenses";
     String EXPENSE_CATEGORY = "expense_categories";
     String COMPANY_DETAIL = "company_detail";
+    String DEBT_NOTIFICATION_HISTORY = "debt_notification_history";
 }

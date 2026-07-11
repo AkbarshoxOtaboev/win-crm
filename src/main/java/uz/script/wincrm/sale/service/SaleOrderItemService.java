@@ -6,9 +6,9 @@ import uz.script.wincrm.exceptions.InsufficientStockException;
 import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.dto.SaleOrderItemDTO;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
-import uz.script.wincrm.utils.PeriodType;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -47,5 +47,13 @@ public interface SaleOrderItemService {
      */
     void validateAndCheckStock(Long warehouseId, Long goodsId, BigDecimal requestedCount);
 
-    Page<SaleOrderItemResponse> fetchByGoodsTypeAndPeriod(Type type, PeriodType period, Pageable pageable);
+    /**
+     * Goods.type va berilgan sana oralig'i (startDate - endDate) bo'yicha filtrlaydi.
+     */
+    Page<SaleOrderItemResponse> fetchByGoodsTypeAndDateRange(
+            Type type,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    );
 }

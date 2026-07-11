@@ -39,3 +39,8 @@ jwt:
   refresh-expiration-ms: 604800000    # 7 kun
 file:
   upload-dir: uploads
+eskiz:
+  base-url: https://notify.eskiz.uz/api
+  email: ${ESKIZ_EMAIL}
+  password: ${ESKIZ_PASSWORD}
+  from: 4546

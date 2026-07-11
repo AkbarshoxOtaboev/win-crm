@@ -8,6 +8,7 @@ import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import uz.script.wincrm.sms.SmsSendException;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
@@ -23,6 +24,15 @@ public class GlobalExceptionHandler {
             HttpServletRequest request
     ) {
         return buildResponse(ex.getMessage(), HttpStatus.BAD_REQUEST, request);
+    }
+
+    // SMS yuborishda xatolik (Eskiz.uz bilan bog'lanish muammosi)
+    @ExceptionHandler(SmsSendException.class)
+    public ResponseEntity<ErrorResponse> handleSmsSend(
+            SmsSendException ex,
+            HttpServletRequest request
+    ) {
+        return buildResponse(ex.getMessage(), HttpStatus.BAD_GATEWAY, request);
     }
 
     // validation exceptions

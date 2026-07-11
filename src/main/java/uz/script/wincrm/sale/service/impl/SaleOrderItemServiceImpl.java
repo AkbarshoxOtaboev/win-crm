@@ -3,11 +3,8 @@ package uz.script.wincrm.sale.service.impl;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
@@ -27,14 +24,14 @@ import uz.script.wincrm.sale.repository.SaleOrderRepository;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
 import uz.script.wincrm.sale.service.SaleOrderItemService;
 import uz.script.wincrm.stock.service.StockService;
-import uz.script.wincrm.utils.PeriodType;
 import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.repository.WarehouseRepository;
 
 import java.math.BigDecimal;
-import java.time.DayOfWeek;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 
 @Service
@@ -194,8 +191,6 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         }
 
         mapper.updateEntity(entity, dto);
-        String username = SecurityContextHolder.getContext().getAuthentication().getName();
-        entity.setCreatedUsername(username);
 
         entity = repository.save(entity);
 
@@ -271,29 +266,19 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         log.info("Stock validation passed successfully");
     }
 
-
     @Override
-    public Page<SaleOrderItemResponse> fetchByGoodsTypeAndPeriod(Type type, PeriodType period, Pageable pageable) {
-        log.info("Filter sale order items by goods type {} and period {}", type, period);
+    public Page<SaleOrderItemResponse> fetchByGoodsTypeAndDateRange(
+            Type type,
+            LocalDate startDate,
+            LocalDate endDate,
+            Pageable pageable
+    ) {
+        log.info("Filter sale order items by goods type {} and date range {} - {}", type, startDate, endDate);
 
-        LocalDateTime now = LocalDateTime.now();
-        LocalDateTime startDate = resolvePeriodStart(period, now);
+        LocalDateTime start = startDate.atStartOfDay();
+        LocalDateTime end = endDate.atTime(LocalTime.MAX);
 
-        return repository.findByGoodsTypeAndArrivalDateBetween(type, startDate, now, pageable)
+        return repository.findByGoodsTypeAndArrivalDateBetween(type, start, end, pageable)
                 .map(mapper::toResponse);
-    }
-
-    /**
-     * DAILY / WEEKLY / MONTHLY davr uchun boshlanish sanasini hisoblaydi.
-     * DAILY   -> bugungi kun 00:00
-     * WEEKLY  -> shu haftaning dushanbasi 00:00
-     * MONTHLY -> shu oyning 1-kuni 00:00
-     */
-    private LocalDateTime resolvePeriodStart(PeriodType period, LocalDateTime now) {
-        return switch (period) {
-            case DAILY -> now.toLocalDate().atStartOfDay();
-            case WEEKLY -> now.toLocalDate().with(DayOfWeek.MONDAY).atStartOfDay();
-            case MONTHLY -> now.toLocalDate().withDayOfMonth(1).atStartOfDay();
-        };
     }
 }

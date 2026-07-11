@@ -56,4 +56,51 @@ public interface SaleOrderItemRepository extends JpaRepository<SaleOrderItem, Lo
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
+
+    // ==== DASHBOARD STATISTIKASI ====
+
+    /**
+     * Berilgan sana oralig'ida eng ko'p miqdorda sotilgan mahsulotlar (kamayish tartibida).
+     * TOP N olish uchun Pageable ishlatiladi, masalan PageRequest.of(0, 10).
+     */
+    @Query("SELECT new uz.script.wincrm.dashboard.TopGoodsResponse(" +
+            "soi.goods.id, soi.goods.name, SUM(soi.count), SUM(soi.count * soi.priceSelling)) " +
+            "FROM SaleOrderItem soi " +
+            "WHERE soi.arrivalDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY soi.goods.id, soi.goods.name " +
+            "ORDER BY SUM(soi.count) DESC")
+    List<uz.script.wincrm.dashboard.TopGoodsResponse> findTopGoodsByQuantity(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    /**
+     * Berilgan sana oralig'ida eng ko'p summada sotilgan mahsulotlar (kamayish tartibida).
+     */
+    @Query("SELECT new uz.script.wincrm.dashboard.TopGoodsResponse(" +
+            "soi.goods.id, soi.goods.name, SUM(soi.count), SUM(soi.count * soi.priceSelling)) " +
+            "FROM SaleOrderItem soi " +
+            "WHERE soi.arrivalDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY soi.goods.id, soi.goods.name " +
+            "ORDER BY SUM(soi.count * soi.priceSelling) DESC")
+    List<uz.script.wincrm.dashboard.TopGoodsResponse> findTopGoodsByAmount(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
+
+    /**
+     * Berilgan sana oralig'ida GoodsGroup bo'yicha jamlangan miqdor va summa (kamayish tartibida).
+     */
+    @Query("SELECT new uz.script.wincrm.dashboard.GoodsGroupSummaryResponse(" +
+            "soi.goods.goodsGroup.id, soi.goods.goodsGroup.name, SUM(soi.count), SUM(soi.count * soi.priceSelling)) " +
+            "FROM SaleOrderItem soi " +
+            "WHERE soi.arrivalDate BETWEEN :startDate AND :endDate " +
+            "GROUP BY soi.goods.goodsGroup.id, soi.goods.goodsGroup.name " +
+            "ORDER BY SUM(soi.count * soi.priceSelling) DESC")
+    List<uz.script.wincrm.dashboard.GoodsGroupSummaryResponse> findGoodsGroupSummary(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate
+    );
 }

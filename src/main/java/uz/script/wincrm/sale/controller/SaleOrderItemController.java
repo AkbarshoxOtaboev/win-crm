@@ -22,9 +22,9 @@ import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.dto.SaleOrderItemDTO;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
 import uz.script.wincrm.sale.service.SaleOrderItemService;
-import uz.script.wincrm.utils.PeriodType;
 import uz.script.wincrm.utils.RestApiResponse;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -268,14 +268,10 @@ public class SaleOrderItemController {
     @GetMapping("/filter")
     @PreAuthorize("hasAuthority('SALE_ORDER_ITEM_VIEW')")
     @Operation(
-            summary = "Filter sale order items by goods type and period",
+            summary = "Filter sale order items by goods type and date range",
             description = """
-                    Goods.type (PRODUCT / SERVICE / WINDOW) va davr (DAILY / WEEKLY / MONTHLY)
-                    bo'yicha filtrlaydi.
-                    
-                    - DAILY: bugungi kun boshidan hozirgacha
-                    - WEEKLY: shu haftaning dushanbasidan hozirgacha
-                    - MONTHLY: shu oyning 1-kunidan hozirgacha
+                    Goods.type (PRODUCT / SERVICE / WINDOW) va sana oralig'i
+                    (startDate dan endDate gacha) bo'yicha filtrlaydi.
                     
                     Only users with SALE_ORDER_ITEM_VIEW permission can use this endpoint.
                     """
@@ -287,18 +283,20 @@ public class SaleOrderItemController {
                     schema = @Schema(implementation = Page.class)
             )
     )
-    public ResponseEntity<?> filterByGoodsTypeAndPeriod(
+    public ResponseEntity<?> filterByGoodsTypeAndDateRange(
             @Parameter(description = "Goods type", example = "PRODUCT")
             @RequestParam Type type,
-            @Parameter(description = "Period", example = "DAILY")
-            @RequestParam PeriodType period,
+            @Parameter(description = "Start date", example = "2026-07-01")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @Parameter(description = "End date", example = "2026-07-31")
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
             @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(
                 RestApiResponse.<Page<SaleOrderItemResponse>>builder()
                         .message("Sale order items filtered successfully")
-                        .data(service.fetchByGoodsTypeAndPeriod(type, period, pageable))
+                        .data(service.fetchByGoodsTypeAndDateRange(type, startDate, endDate, pageable))
                         .build()
         );
     }

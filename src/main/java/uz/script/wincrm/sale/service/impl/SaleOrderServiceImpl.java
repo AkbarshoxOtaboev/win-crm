@@ -60,7 +60,9 @@ public class SaleOrderServiceImpl implements SaleOrderService {
                     .orElseThrow(() -> new ResourceNotFoundException("Client not found with id: " + dto.getClientId()));
         }
 
-        User currentUser = getCurrentUser();
+        User currentUser = userRepository.findById(dto.getUserId())
+                .orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + dto
+                        .getUserId()));
 
         SaleOrder entity = mapper.toEntity(dto);
         entity.setClient(client);

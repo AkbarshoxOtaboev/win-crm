@@ -39,11 +39,17 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
      * Qarzdor mijozlar ro'yxatini (admin panel uchun) ixtiyoriy filtrlar bilan qaytaradi:
      * - startDate/endDate: orderDate bo'yicha sana oralig'i (ikkalasi ham null bo'lsa cheklanmaydi)
      * - userId: buyurtmaga biriktirilgan xodim bo'yicha (null bo'lsa cheklanmaydi)
+     *
+     * DIQQAT: "CAST(:param AS ...)" bu yerda shart — PostgreSQL JDBC drayveri
+     * "(:param IS NULL OR ...)" shablonida parametr faqat IS NULL tekshiruvida
+     * ishlatilganda uning tipini avtomatik aniqlay olmaydi va
+     * "не удалось определить тип данных параметра $1" xatosini beradi.
+     * Aniq CAST bu muammoni butunlay bartaraf etadi.
      */
     @Query("SELECT so FROM SaleOrder so WHERE so.debtSum > 0 " +
-            "AND (:startDate IS NULL OR so.orderDate >= :startDate) " +
-            "AND (:endDate IS NULL OR so.orderDate <= :endDate) " +
-            "AND (:userId IS NULL OR so.user.id = :userId)")
+            "AND (CAST(:startDate AS timestamp) IS NULL OR so.orderDate >= :startDate) " +
+            "AND (CAST(:endDate AS timestamp) IS NULL OR so.orderDate <= :endDate) " +
+            "AND (CAST(:userId AS long) IS NULL OR so.user.id = :userId)")
     List<SaleOrder> findDebtOrders(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
@@ -60,4 +66,23 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
     Optional<SaleOrder> findByIdAndWarehouseId(Long id, Long warehouseId);
 
 //    Optional<SaleOrder> findByIdAndStatusNotDeleted(Long id);
+
+    /**
+     * Berilgan davrda eng ko'p savdo qilgan TOP sotuvchilarni (User) qaytaradi.
+     * Har bir qator: [0] = User entity, [1] = buyurtmalar soni (Long), [2] = umumiy summa (BigDecimal).
+     * DELETED buyurtmalar SaleOrder'dagi @SQLRestriction("status <> 'DELETED'") orqali avtomatik chiqarib tashlanadi.
+     */
+    @Query("""
+            SELECT so.user, COUNT(so), COALESCE(SUM(so.totalSum), 0)
+            FROM SaleOrder so
+            WHERE so.user IS NOT NULL
+              AND so.orderDate BETWEEN :startDate AND :endDate
+            GROUP BY so.user
+            ORDER BY SUM(so.totalSum) DESC
+            """)
+    List<Object[]> findTopSellersByAmount(
+            @Param("startDate") LocalDateTime startDate,
+            @Param("endDate") LocalDateTime endDate,
+            Pageable pageable
+    );
 }

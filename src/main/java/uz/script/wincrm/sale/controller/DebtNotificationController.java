@@ -72,7 +72,7 @@ public class DebtNotificationController {
     }
 
     @PostMapping("/send/client/{clientId}")
-    @PreAuthorize("hasAuthority('DEBT_NOTIFICATION_SEND')")
+    @PreAuthorize("hasAuthority('DEBT_NOTIFICATION_CREATE')")
     @Operation(
             summary = "Bitta mijozga qarz haqida SMS yuborish",
             description = "Admin tanlagan bitta mijozga, uning barcha buyurtmalari bo'yicha umumiy qarz " +
@@ -93,7 +93,7 @@ public class DebtNotificationController {
     }
 
     @PostMapping("/send/clients")
-    @PreAuthorize("hasAuthority('DEBT_NOTIFICATION_SEND')")
+    @PreAuthorize("hasAuthority('DEBT_NOTIFICATION_CREATE')")
     @Operation(
             summary = "Tanlangan bir nechta mijozga qarz haqida SMS yuborish",
             description = "Admin panelda belgilab (checkbox bilan) tanlangan mijozlarning ID ro'yxati " +
@@ -112,7 +112,7 @@ public class DebtNotificationController {
     }
 
     @PostMapping("/send/order/{saleOrderId}")
-    @PreAuthorize("hasAuthority('DEBT_NOTIFICATION_SEND')")
+    @PreAuthorize("hasAuthority('DEBT_NOTIFICATION_CREATE')")
     @Operation(
             summary = "Bitta buyurtma bo'yicha mijozga SMS yuborish",
             description = "Faqat DEBT_NOTIFICATION_SEND ruxsatiga ega foydalanuvchilar."

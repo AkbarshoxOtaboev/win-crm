@@ -12,15 +12,10 @@ import org.springframework.stereotype.Component;
 public class EskizProperties {
 
     /**
-     * application.yml:
-     * eskiz:
-     *   base-url: https://notify.eskiz.uz/api
-     *   email: ${ESKIZ_EMAIL}
-     *   password: ${ESKIZ_PASSWORD}
-     *   from: 4546
+     * Eslatma: email va parol endi bu yerda emas — ular dashboard orqali
+     * kiritiladi va "eskiz_settings" jadvalida shifrlangan holda saqlanadi.
      */
     private String baseUrl = "https://notify.eskiz.uz/api";
-    private String email;
-    private String password;
     private String from = "4546";
+    private String encryptionSecret;
 }

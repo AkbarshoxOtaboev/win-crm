@@ -133,7 +133,7 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String message = buildClientMessage(client, totalDebt);
-
+//        String message = deafultTemplate();
         try {
             smsService.sendSms(client.getPhone(), message);
             historyRecorder.record(client, client.getPhone(), message, totalDebt, DebtNotificationStatus.SUCCESS, null);
@@ -143,9 +143,15 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
         }
     }
 
+    private String deafultTemplate(){
+        return "Assalomu allaykum ABAT STEKLO Kompanyasi Xodimlari bugun hammaga 17:30 majlis elon qilindi.";
+    }
+
     private String buildClientMessage(Client client, BigDecimal totalDebt) {
-        return "Hurmatli " + client.getFullName() + ", sizning qarzingiz: " + totalDebt
-                + " so'm. Iltimos, to'lovni imkon qadar tezroq amalga oshiring.";
+//        return "Hurmatli " + client.getFullName() + ", sizning qarzingiz: " + totalDebt
+//                + " so'm. Iltimos, to'lovni imkon qadar tezroq amalga oshiring.";
+        return "Hurmatli" + client.getFullName()+ "! ABADSTEKLO korxonasidagi qarzingiz "+totalDebt+" soʻmni tashkil etadi." +
+                " Iltimos, toʻlovni oʻz vaqtida amalga oshiring. Rahmat!";
     }
 
     private DebtorClientResponse toDebtorClientResponse(Client client, List<SaleOrder> orders) {

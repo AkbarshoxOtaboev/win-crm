@@ -26,6 +26,10 @@ public class SaleOrderDTO {
     @Schema(description = "Warehouse ID", example = "1", required = true)
     private Long warehouseId;
 
+    @NotNull(message = "User ID is required")
+    @Schema(description = "User ID", example = "1", required = true)
+    private Long userId;
+
     @Schema(description = "Comment/Notes about the sale order")
     private String comment;
 

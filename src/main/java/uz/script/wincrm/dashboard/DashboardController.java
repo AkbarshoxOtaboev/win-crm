@@ -15,6 +15,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import uz.script.wincrm.dashboard.responses.*;
+import uz.script.wincrm.expense.service.ExpenseService;
 import uz.script.wincrm.utils.RestApiResponse;
 
 import java.time.LocalDate;
@@ -28,6 +30,7 @@ import java.util.List;
 public class DashboardController {
 
     private final DashboardService service;
+    private final ExpenseService expenseService;
 
     @GetMapping("/top-goods/by-quantity")
     @PreAuthorize("hasAuthority('DASHBOARD_VIEW')")
@@ -227,4 +230,51 @@ public class DashboardController {
                         .build()
         );
     }
+
+    @GetMapping("/expense/info")
+    @PreAuthorize("hasAuthority('DASHBOARD_VIEW')")
+    @Operation(
+            summary = "Kunlik xarajatlar (ExpenseCategory bo'yicha)",
+            description = """
+                Berilgan sana oralig'idagi xarajatlarni ExpenseCategory bo'yicha
+                guruhlab qaytaradi.
+                
+                Agar fromDate va toDate yuborilmasa, avtomatik bugungi kun olinadi.
+                
+                Only users with DASHBOARD_VIEW permission can use this endpoint.
+                """
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = DailyExpenseReportResponse.class))
+            )
+    )
+    public ResponseEntity<?> dailyExpenseReportByExpenseCategory(
+
+            @Parameter(description = "Boshlanish sanasi", example = "2026-07-01")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate fromDate,
+
+            @Parameter(description = "Tugash sanasi", example = "2026-07-31")
+            @RequestParam(required = false)
+            @DateTimeFormat(iso = DateTimeFormat.ISO.DATE)
+            LocalDate toDate
+    ) {
+
+        LocalDate today = LocalDate.now();
+
+        fromDate = fromDate == null ? today : fromDate;
+        toDate = toDate == null ? today : toDate;
+
+        return ResponseEntity.ok(
+                RestApiResponse.<List<DailyExpenseReportResponse>>builder()
+                        .message("Kunlik xarajatlar statistikasi")
+                        .data(expenseService.findExpenseReportByExpenesCategory(fromDate, toDate))
+                        .build()
+        );
+    }
+
 }

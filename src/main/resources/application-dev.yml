@@ -41,5 +41,5 @@ file:
   upload-dir: uploads
 eskiz:
   base-url: https://notify.eskiz.uz/api
-  from: 4546
+  from: ABATSTEKLO
   encryption-secret: raNGqRTTkZ6KJ9ydsrzzw2Y2hcKtjjBePayRHdzNEkY

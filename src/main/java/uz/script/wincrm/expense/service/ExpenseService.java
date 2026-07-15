@@ -2,6 +2,7 @@ package uz.script.wincrm.expense.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import uz.script.wincrm.dashboard.responses.DailyExpenseReportResponse;
 import uz.script.wincrm.expense.dto.ExpenseDTO;
 import uz.script.wincrm.expense.response.ExpenseResponse;
 
@@ -25,4 +26,6 @@ public interface ExpenseService {
     ExpenseResponse update(Long id, ExpenseDTO dto);
 
     void delete(Long id);
+
+    List<DailyExpenseReportResponse> findExpenseReportByExpenesCategory(LocalDate startDate, LocalDate endDate);
 }

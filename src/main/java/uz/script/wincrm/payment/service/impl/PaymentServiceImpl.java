@@ -10,7 +10,7 @@ import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.clients.Client;
-import uz.script.wincrm.clients.ClientRepository;
+import uz.script.wincrm.clients.repository.ClientRepository;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.payment.Payment;

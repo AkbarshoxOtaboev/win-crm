@@ -1,4 +1,4 @@
-package uz.script.wincrm.clients;
+package uz.script.wincrm.clients.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
@@ -82,4 +82,10 @@ public class ClientDTO {
             requiredMode = Schema.RequiredMode.NOT_REQUIRED
     )
     private String description;
+
+    @Schema(
+            description = "Client group id",
+            example = "1"
+    )
+    private Long clientGroupId;
 }

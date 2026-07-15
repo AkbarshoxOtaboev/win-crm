@@ -150,8 +150,10 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
     private String buildClientMessage(Client client, BigDecimal totalDebt) {
 //        return "Hurmatli " + client.getFullName() + ", sizning qarzingiz: " + totalDebt
 //                + " so'm. Iltimos, to'lovni imkon qadar tezroq amalga oshiring.";
-        return "Hurmatli" + client.getFullName()+ "! ABADSTEKLO korxonasidagi qarzingiz "+totalDebt+" soʻmni tashkil etadi." +
-                " Iltimos, toʻlovni oʻz vaqtida amalga oshiring. Rahmat!";
+//        return "Hurmatli" + client.getFullName()+ "! ABADSTEKLO korxonasidagi qarzingiz "+totalDebt+" soʻmni tashkil etadi." +
+//                " Iltimos, toʻlovni oʻz vaqtida amalga oshiring. Rahmat!";
+        return "Hurmatli "+client.getFullName()+"! ABADSTEKLO korxonasidagi qarzingiz "+totalDebt.stripTrailingZeros().toPlainString()+" soʻmni tashkil etadi. Iltimos, toʻlovni oʻz vaqtida amalga oshiring. Rahmat!";
+
     }
 
     private DebtorClientResponse toDebtorClientResponse(Client client, List<SaleOrder> orders) {

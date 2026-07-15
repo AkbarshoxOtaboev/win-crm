@@ -8,6 +8,7 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
+import uz.script.wincrm.dashboard.responses.DailyExpenseReportResponse;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.expense.Expense;
 import uz.script.wincrm.expense.ExpenseCategory;
@@ -19,8 +20,11 @@ import uz.script.wincrm.expense.response.ExpenseResponse;
 import uz.script.wincrm.expense.service.ExpenseService;
 import uz.script.wincrm.utils.Status;
 
+import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
@@ -134,5 +138,38 @@ public class ExpenseServiceImpl implements ExpenseService {
 
         entity.setStatus(Status.DELETED);
         repository.save(entity);
+    }
+
+    @Override
+    public List<DailyExpenseReportResponse> findExpenseReportByExpenesCategory(
+            LocalDate startDate,
+            LocalDate endDate
+    ) {
+
+        List<Expense> expenses = repository.findExpenseReportByExpenesCategory(startDate, endDate);
+
+        return expenses.stream()
+                .collect(Collectors.groupingBy(
+                        e -> e.getCategory().getId(),
+                        LinkedHashMap::new,
+                        Collectors.toList()
+                ))
+                .values()
+                .stream()
+                .map(list -> {
+
+                    ExpenseCategory category = list.getFirst().getCategory();
+
+                    return DailyExpenseReportResponse.builder()
+                            .categoryId(category.getId())
+                            .categoryName(category.getName())
+                            .totalAmount(
+                                    list.stream()
+                                            .map(Expense::getAmount)
+                                            .reduce(BigDecimal.ZERO, BigDecimal::add)
+                            )
+                            .build();
+                })
+                .toList();
     }
 }

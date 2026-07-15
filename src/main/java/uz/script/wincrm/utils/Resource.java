@@ -4,6 +4,7 @@ public enum Resource {
     USER,
     ROLE,
     CLIENT,
+    CLIENT_GROUP,
     SUPPLIER,
     UNIT_TYPE,
     GOODS_GROUP,
@@ -21,5 +22,6 @@ public enum Resource {
     EXPENSE_CATEGORY,
     COMPANY_DETAIL,
     DEBT_NOTIFICATION,
-    DASHBOARD
+    DASHBOARD,
+    BOT_SETTINGS
 }

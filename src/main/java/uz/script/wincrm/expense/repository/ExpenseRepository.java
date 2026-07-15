@@ -31,4 +31,16 @@ public interface ExpenseRepository extends JpaRepository<Expense, Long> {
     @Query("SELECT COALESCE(SUM(e.amount), 0) FROM Expense e " +
             "WHERE e.category.id = :categoryId AND e.status <> 'DELETED'")
     BigDecimal getTotalAmountByCategory(@Param("categoryId") Long categoryId);
+
+    @Query("""
+            select e
+            from Expense e
+            join fetch e.category c
+            where e.expenseDate between :startDate and :endDate
+            order by c.name,e.expenseDate
+            """)
+    List<Expense> findExpenseReportByExpenesCategory(
+            @Param("startDate") LocalDate startDate,
+            @Param("endDate") LocalDate endDate
+    );
 }

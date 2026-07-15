@@ -1,5 +1,7 @@
 package uz.script.wincrm.dashboard;
 
+import uz.script.wincrm.dashboard.responses.*;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;

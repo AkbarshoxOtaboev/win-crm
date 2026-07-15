@@ -1,20 +1,21 @@
-package uz.script.wincrm.clients;
+package uz.script.wincrm.clients.service.impl;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
+import uz.script.wincrm.clients.Client;
+import uz.script.wincrm.clients.dto.ClientDTO;
+import uz.script.wincrm.clients.repository.ClientRepository;
+import uz.script.wincrm.clients.response.ClientResponse;
+import uz.script.wincrm.clients.service.ClientService;
 import uz.script.wincrm.exceptions.AlreadyExistsException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.utils.Status;
 
 import java.util.List;
-import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor

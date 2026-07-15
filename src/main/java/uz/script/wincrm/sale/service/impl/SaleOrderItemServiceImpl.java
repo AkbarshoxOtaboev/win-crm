@@ -9,7 +9,8 @@ import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.clients.Client;
-import uz.script.wincrm.clients.ClientRepository;
+import uz.script.wincrm.clients.repository.ClientRepository;
+import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.InsufficientStockException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.goods.Goods;
@@ -73,7 +74,7 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
 
         SaleOrder saleOrder = saleOrderRepository.findById(dto.getSaleOrderId())
                 .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + dto.getSaleOrderId()));
-
+        validateSaleOrderStatus(saleOrder);
 
         SaleOrderItem entity = mapper.toEntity(dto);
         entity.setGoods(goods);
@@ -174,7 +175,7 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
 
         SaleOrderItem entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale order item not found with id: " + id));
-
+        validateSaleOrderStatus(entity.getSaleOrder());
         BigDecimal oldCount = entity.getCount();
         Long goodsId = entity.getGoods().getId();
         Long warehouseId = entity.getWarehouse().getId();
@@ -210,9 +211,11 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
     public void delete(Long id) {
         log.info("Delete sale order item with id {}", id);
 
+
         SaleOrderItem entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale order item not found with id: " + id));
 
+        validateSaleOrderStatus(entity.getSaleOrder());
         entity.setStatus(Status.DELETED);
         repository.save(entity);
     }
@@ -281,4 +284,26 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         return repository.findByGoodsTypeAndArrivalDateBetween(type, start, end, pageable)
                 .map(mapper::toResponse);
     }
+
+    @Override
+    public void validateSaleOrderStatus(SaleOrder saleOrder) {
+        if (saleOrder == null) {
+            throw new BadRequestException("Sale Order is required.");
+        }
+
+        if (saleOrder.getSalesOrderStatus() == null) {
+            throw new BadRequestException("Sale Order status is not defined.");
+        }
+
+        if (saleOrder.getSalesOrderStatus().isFinal()) {
+            throw new BadRequestException(
+                    String.format(
+                            "Sale Order is %s. You cannot add, update or delete items.",
+                            saleOrder.getStatus()
+                    )
+            );
+        }
+    }
+
+
 }

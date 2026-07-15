@@ -16,6 +16,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.script.wincrm.sale.response.DebtNotificationHistoryPageResponse;
 import uz.script.wincrm.sale.response.DebtNotificationHistoryResponse;
 import uz.script.wincrm.sale.response.DebtorClientResponse;
 import uz.script.wincrm.sale.service.DebtNotificationService;
@@ -168,7 +169,9 @@ public class DebtNotificationController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(
+                            implementation = DebtNotificationHistoryPageResponse.class
+                    )
             )
     )
     public ResponseEntity<?> fetchHistoryByClientId(

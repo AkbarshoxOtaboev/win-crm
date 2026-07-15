@@ -1,4 +1,7 @@
-package uz.script.wincrm.clients;
+package uz.script.wincrm.clients.service;
+
+import uz.script.wincrm.clients.dto.ClientDTO;
+import uz.script.wincrm.clients.response.ClientResponse;
 
 import java.util.List;
 

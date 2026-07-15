@@ -1,9 +1,6 @@
 package uz.script.wincrm.clients;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.OneToMany;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -63,4 +60,8 @@ public class Client extends BaseEntity {
 
     @OneToMany(mappedBy = "client")
     private List<Payment> payments;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "client_group_id")
+    private ClientGroup clientGroup;
 }

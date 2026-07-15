@@ -1,4 +1,4 @@
-package uz.script.wincrm.clients;
+package uz.script.wincrm.clients.response;
 
 import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
@@ -98,4 +98,7 @@ public class ClientResponse {
             example = "admin"
     )
     private String createdUsername;
+
+    private Long clientGroupId;
+    private String clientGroupName;
 }

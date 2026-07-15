@@ -1,4 +1,4 @@
-package uz.script.wincrm.clients;
+package uz.script.wincrm.clients.controller;
 
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -12,6 +12,9 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.script.wincrm.clients.dto.ClientDTO;
+import uz.script.wincrm.clients.response.ClientResponse;
+import uz.script.wincrm.clients.service.ClientService;
 import uz.script.wincrm.utils.RestApiResponse;
 
 import java.util.List;

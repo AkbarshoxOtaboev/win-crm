@@ -7,6 +7,7 @@ public interface TableName {
     String REFRESH_TOKENS = "refresh_tokens";
     String AUDIT_LOGS = "audit_logs";
     String CLIENTS = "clients";
+    String CLIENT_GROUPS="client_groups";
     String SUPPLIERS = "suppliers";
     String GOODS = "goods";
     String GOODS_GROUP = "goods_group";
@@ -24,4 +25,6 @@ public interface TableName {
     String EXPENSE_CATEGORY = "expense_categories";
     String COMPANY_DETAIL = "company_detail";
     String DEBT_NOTIFICATION_HISTORY = "debt_notification_history";
+    String TELEGRAM_USERS = "telegram_users";
+    String BOT_SETTINGS   = "bot_settings";
 }

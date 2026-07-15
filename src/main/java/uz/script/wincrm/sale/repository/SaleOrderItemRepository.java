@@ -6,6 +6,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
+import uz.script.wincrm.dashboard.responses.GoodsGroupSummaryResponse;
+import uz.script.wincrm.dashboard.responses.TopGoodsResponse;
 import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.SaleOrderItem;
 
@@ -63,13 +65,13 @@ public interface SaleOrderItemRepository extends JpaRepository<SaleOrderItem, Lo
      * Berilgan sana oralig'ida eng ko'p miqdorda sotilgan mahsulotlar (kamayish tartibida).
      * TOP N olish uchun Pageable ishlatiladi, masalan PageRequest.of(0, 10).
      */
-    @Query("SELECT new uz.script.wincrm.dashboard.TopGoodsResponse(" +
+    @Query("SELECT new uz.script.wincrm.dashboard.responses.TopGoodsResponse(" +
             "soi.goods.id, soi.goods.name, SUM(soi.count), SUM(soi.count * soi.priceSelling)) " +
             "FROM SaleOrderItem soi " +
             "WHERE soi.arrivalDate BETWEEN :startDate AND :endDate " +
             "GROUP BY soi.goods.id, soi.goods.name " +
             "ORDER BY SUM(soi.count) DESC")
-    List<uz.script.wincrm.dashboard.TopGoodsResponse> findTopGoodsByQuantity(
+    List<TopGoodsResponse> findTopGoodsByQuantity(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
@@ -78,13 +80,13 @@ public interface SaleOrderItemRepository extends JpaRepository<SaleOrderItem, Lo
     /**
      * Berilgan sana oralig'ida eng ko'p summada sotilgan mahsulotlar (kamayish tartibida).
      */
-    @Query("SELECT new uz.script.wincrm.dashboard.TopGoodsResponse(" +
+    @Query("SELECT new uz.script.wincrm.dashboard.responses.TopGoodsResponse(" +
             "soi.goods.id, soi.goods.name, SUM(soi.count), SUM(soi.count * soi.priceSelling)) " +
             "FROM SaleOrderItem soi " +
             "WHERE soi.arrivalDate BETWEEN :startDate AND :endDate " +
             "GROUP BY soi.goods.id, soi.goods.name " +
             "ORDER BY SUM(soi.count * soi.priceSelling) DESC")
-    List<uz.script.wincrm.dashboard.TopGoodsResponse> findTopGoodsByAmount(
+    List<TopGoodsResponse> findTopGoodsByAmount(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
@@ -93,13 +95,13 @@ public interface SaleOrderItemRepository extends JpaRepository<SaleOrderItem, Lo
     /**
      * Berilgan sana oralig'ida GoodsGroup bo'yicha jamlangan miqdor va summa (kamayish tartibida).
      */
-    @Query("SELECT new uz.script.wincrm.dashboard.GoodsGroupSummaryResponse(" +
+    @Query("SELECT new uz.script.wincrm.dashboard.responses.GoodsGroupSummaryResponse(" +
             "soi.goods.goodsGroup.id, soi.goods.goodsGroup.name, SUM(soi.count), SUM(soi.count * soi.priceSelling)) " +
             "FROM SaleOrderItem soi " +
             "WHERE soi.arrivalDate BETWEEN :startDate AND :endDate " +
             "GROUP BY soi.goods.goodsGroup.id, soi.goods.goodsGroup.name " +
             "ORDER BY SUM(soi.count * soi.priceSelling) DESC")
-    List<uz.script.wincrm.dashboard.GoodsGroupSummaryResponse> findGoodsGroupSummary(
+    List<GoodsGroupSummaryResponse> findGoodsGroupSummary(
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate
     );

@@ -9,6 +9,8 @@ public interface TableName {
     String CLIENTS = "clients";
     String CLIENT_GROUPS="client_groups";
     String SUPPLIERS = "suppliers";
+    String SUPPLIER_PAYMENTS= "supplier_payments";
+    String SUPPLIER_PAYMENT_STOCKS="supplier_payment_stocks";
     String GOODS = "goods";
     String GOODS_GROUP = "goods_group";
     String UNIT_TYPES = "unit_types";

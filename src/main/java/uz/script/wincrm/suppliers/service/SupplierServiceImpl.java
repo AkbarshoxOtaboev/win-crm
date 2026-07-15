@@ -8,7 +8,7 @@ import org.springframework.stereotype.Service;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.suppliers.Supplier;
-import uz.script.wincrm.suppliers.SupplierRepository;
+import uz.script.wincrm.suppliers.repository.SupplierRepository;
 import uz.script.wincrm.suppliers.dto.SupplierDTO;
 import uz.script.wincrm.suppliers.dto.SupplierFilterDTO;
 import uz.script.wincrm.suppliers.response.SupplierResponse;

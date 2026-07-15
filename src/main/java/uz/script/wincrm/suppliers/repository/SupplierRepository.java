@@ -1,7 +1,8 @@
-package uz.script.wincrm.suppliers;
+package uz.script.wincrm.suppliers.repository;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import uz.script.wincrm.suppliers.Supplier;
 
 import java.util.Optional;
 

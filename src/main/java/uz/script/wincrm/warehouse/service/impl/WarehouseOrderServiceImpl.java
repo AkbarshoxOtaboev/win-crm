@@ -10,6 +10,7 @@ import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.suppliers.Supplier;
 import uz.script.wincrm.suppliers.repository.SupplierRepository;
+import uz.script.wincrm.suppliers.service.SupplierBalanceService;
 import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.WarehouseOrder;
@@ -20,7 +21,9 @@ import uz.script.wincrm.warehouse.repository.WarehouseRepository;
 import uz.script.wincrm.warehouse.response.WarehouseOrderResponse;
 import uz.script.wincrm.warehouse.service.WarehouseOrderService;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.Objects;
 
 @Service
 @RequiredArgsConstructor
@@ -32,6 +35,7 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
     private final WarehouseRepository warehouseRepository;
     private final SupplierRepository supplierRepository;
     private final WarehouseOrderMapper mapper;
+    private final SupplierBalanceService supplierBalanceService;
 
     @Override
     @Auditable(
@@ -55,6 +59,9 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
         WarehouseOrder order = mapper.toEntity(dto, supplier, warehouse);
         order.setCreatedUsername(username);
 
+        // Order yaratilganda hali item yo'q, totalSum = 0/null.
+        // Supplier balansi (totalPurchase/totalDebt) faqat item qo'shilganda
+        // WarehouseOrderItemServiceImpl#recalculateOrderTotalSum orqali yangilanadi.
         order = repository.save(order);
 
         return mapper.toResponse(order);
@@ -118,7 +125,7 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Warehouse order not found with id: " + id));
 
-        Supplier supplier = supplierRepository.findById(dto.getSupplierId())
+        Supplier newSupplier = supplierRepository.findById(dto.getSupplierId())
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Supplier not found with id: " + dto.getSupplierId()));
 
@@ -126,10 +133,26 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
                 .orElseThrow(() ->
                         new ResourceNotFoundException("Warehouse not found with id: " + dto.getWarehouseId()));
 
-        mapper.updateEntity(order, dto, supplier, warehouse);
+        // WarehouseOrderDTO totalSum saqlamaydi (u item'lardan avtomatik hisoblanadi),
+        // shuning uchun bu yerda faqat supplier o'zgarganda balansni ko'chiramiz.
+        Long oldSupplierId = order.getSupplier().getId();
+        Long newSupplierId = newSupplier.getId();
+        BigDecimal currentTotalSum = order.getTotalSum() != null ? order.getTotalSum() : BigDecimal.ZERO;
+
+        mapper.updateEntity(order, dto, newSupplier, warehouse);
         String username = SecurityContextHolder.getContext().getAuthentication().getName();
         order.setCreatedUsername(username);
         order = repository.save(order);
+
+        if (!Objects.equals(oldSupplierId, newSupplierId)
+                && currentTotalSum.compareTo(BigDecimal.ZERO) != 0) {
+
+            supplierBalanceService.decreasePurchase(oldSupplierId, currentTotalSum);
+            supplierBalanceService.increasePurchase(newSupplierId, currentTotalSum);
+
+            log.info("Order's supplier changed, balance transferred. Old supplierId: {} (-{}), New supplierId: {} (+{})",
+                    oldSupplierId, currentTotalSum, newSupplierId, currentTotalSum);
+        }
 
         return mapper.toResponse(order);
     }
@@ -149,5 +172,16 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
 
         order.setStatus(Status.DELETED);
         repository.save(order);
+
+        // Order butunlay o'chirilganda, undagi item'lar orqali yig'ilgan
+        // totalSum ham supplier balansidan ayiriladi.
+        BigDecimal totalSum = order.getTotalSum() != null ? order.getTotalSum() : BigDecimal.ZERO;
+
+        if (totalSum.compareTo(BigDecimal.ZERO) != 0) {
+            supplierBalanceService.decreasePurchase(order.getSupplier().getId(), totalSum);
+
+            log.info("Supplier balance decreased by purchase. SupplierId: {}, Sum: {}",
+                    order.getSupplier().getId(), totalSum);
+        }
     }
 }

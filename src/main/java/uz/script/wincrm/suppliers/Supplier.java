@@ -50,4 +50,11 @@ public class Supplier extends BaseEntity {
 
     @OneToMany(mappedBy = "supplier")
     private List<WarehouseOrder> warehouseOrders;
+
+    @OneToOne(
+            mappedBy = "supplier",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private SupplierBalance balance;
 }

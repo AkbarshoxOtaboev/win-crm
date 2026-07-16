@@ -10,6 +10,10 @@ public interface WarehouseOrderItemService {
     WarehouseOrderItemResponse findById(Long id);
     List<WarehouseOrderItemResponse> fetchAllItems();
     List<WarehouseOrderItemResponse> fetchByWarehouseOrderId(Long warehouseOrderId);
+
+    /** Berilgan mahsulot (Goods) bo'yicha barcha ombor kirim yozuvlarini qaytaradi. */
+    List<WarehouseOrderItemResponse> fetchByGoodsId(Long goodsId);
+
     WarehouseOrderItemResponse update(Long id, WarehouseOrderItemDTO dto);
     void delete(Long id);
 }

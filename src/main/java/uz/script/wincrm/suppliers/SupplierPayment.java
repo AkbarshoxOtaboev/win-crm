@@ -6,6 +6,7 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
+import uz.script.wincrm.payment.PaymentType;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 
@@ -25,4 +26,8 @@ public class SupplierPayment extends BaseEntity {
     private Supplier supplier;
     private BigDecimal paidSumm;
     private LocalDateTime paidDate;
+    private String comment;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "payment_type_id")
+    private PaymentType paymentType;
 }

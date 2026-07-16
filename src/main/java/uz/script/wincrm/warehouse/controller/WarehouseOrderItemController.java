@@ -122,6 +122,30 @@ public class WarehouseOrderItemController {
         );
     }
 
+    @GetMapping("/goods/{goodsId}")
+    @PreAuthorize("hasAuthority('WAREHOUSE_ORDER_ITEM_VIEW')")
+    @Operation(
+            summary = "Fetch warehouse order items by goods",
+            description = "Only users with WAREHOUSE_ORDER_ITEM_VIEW permission can use this endpoint."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(
+                            schema = @Schema(implementation = WarehouseOrderItemResponse.class)
+                    )
+            )
+    )
+    public ResponseEntity<?> fetchByGoodsId(@PathVariable Long goodsId) {
+        return ResponseEntity.ok(
+                RestApiResponse.<List<WarehouseOrderItemResponse>>builder()
+                        .message("Warehouse order items fetched successfully")
+                        .data(service.fetchByGoodsId(goodsId))
+                        .build()
+        );
+    }
+
     @PutMapping("/update/{id}")
     @PreAuthorize("hasAuthority('WAREHOUSE_ORDER_ITEM_EDIT')")
     @Operation(

@@ -10,6 +10,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.suppliers.SupplierPayment;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 
@@ -29,4 +30,7 @@ public class PaymentType extends BaseEntity {
 
     @OneToMany(mappedBy = "paymentType")
     private List<Payment> payments;
+
+    @OneToMany(mappedBy = "paymentType")
+    private List<SupplierPayment> supplierPayments;
 }

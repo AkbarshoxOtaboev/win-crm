@@ -10,7 +10,7 @@ public interface TableName {
     String CLIENT_GROUPS="client_groups";
     String SUPPLIERS = "suppliers";
     String SUPPLIER_PAYMENTS= "supplier_payments";
-    String SUPPLIER_PAYMENT_STOCKS="supplier_payment_stocks";
+    String SUPPLIER_BALANCE="supplier_BALANCE";
     String GOODS = "goods";
     String GOODS_GROUP = "goods_group";
     String UNIT_TYPES = "unit_types";
@@ -23,6 +23,7 @@ public interface TableName {
     String STOCK_HISTORIES = "stock_histories";
     String PAYMENT_TYPES = "payment_types";
     String PAYMENTS = "payments";
+    String PAYMENT_HISTORIES = "payment_histories";
     String EXPENSE = "expenses";
     String EXPENSE_CATEGORY = "expense_categories";
     String COMPANY_DETAIL = "company_detail";

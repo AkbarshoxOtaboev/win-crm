@@ -13,6 +13,7 @@ import uz.script.wincrm.goods.repository.GoodsRepository;
 import uz.script.wincrm.stock.service.StockService;
 import uz.script.wincrm.suppliers.Supplier;
 import uz.script.wincrm.suppliers.repository.SupplierRepository;
+import uz.script.wincrm.suppliers.service.SupplierBalanceService;
 import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.WarehouseOrder;
@@ -41,6 +42,7 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
     private final GoodsRepository goodsRepository;
     private final WarehouseOrderItemMapper mapper;
     private final StockService stockService;
+    private final SupplierBalanceService supplierBalanceService;
 
     @Override
     @Auditable(
@@ -102,6 +104,16 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
         log.info("Fetch warehouse order items by order id {}", warehouseOrderId);
 
         return repository.findAllByWarehouseOrderId(warehouseOrderId)
+                .stream()
+                .map(mapper::toResponse)
+                .toList();
+    }
+
+    @Override
+    public List<WarehouseOrderItemResponse> fetchByGoodsId(Long goodsId) {
+        log.info("Fetch warehouse order items by goods id {}", goodsId);
+
+        return repository.findAllByGoodsId(goodsId)
                 .stream()
                 .map(mapper::toResponse)
                 .toList();
@@ -175,16 +187,39 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
         recalculateOrderTotalSum(item.getWarehouseOrder());
     }
 
+    /**
+     * WarehouseOrder.totalSum ni faol item'lar asosida qayta hisoblaydi va
+     * eski/yangi totalSum orasidagi farqni supplier balansiga (totalPurchase/totalDebt)
+     * qo'llaydi. Item qo'shilishi, o'chirilishi yoki tahrirlanishi natijasida
+     * totalSum o'zgargan barcha holatlar shu yerdan o'tadi.
+     */
     private void recalculateOrderTotalSum(WarehouseOrder warehouseOrder) {
         List<WarehouseOrderItem> items = repository.findAllByWarehouseOrderId(warehouseOrder.getId());
 
-        BigDecimal total = items.stream()
+        BigDecimal newTotal = items.stream()
                 .filter(i -> i.getStatus() == Status.ACTIVE)
                 .map(i -> i.getPriceSelling().multiply(i.getCount()))
                 .reduce(BigDecimal.ZERO, BigDecimal::add);
 
-        warehouseOrder.setTotalSum(total);
+        BigDecimal oldTotal = warehouseOrder.getTotalSum() != null
+                ? warehouseOrder.getTotalSum()
+                : BigDecimal.ZERO;
+
+        warehouseOrder.setTotalSum(newTotal);
         warehouseOrderRepository.save(warehouseOrder);
+
+        BigDecimal diff = newTotal.subtract(oldTotal);
+        Long supplierId = warehouseOrder.getSupplier().getId();
+
+        if (diff.compareTo(BigDecimal.ZERO) > 0) {
+            supplierBalanceService.increasePurchase(supplierId, diff);
+            log.info("Supplier balance increased by purchase diff. SupplierId: {}, Diff: {}",
+                    supplierId, diff);
+        } else if (diff.compareTo(BigDecimal.ZERO) < 0) {
+            supplierBalanceService.decreasePurchase(supplierId, diff.abs());
+            log.info("Supplier balance decreased by purchase diff. SupplierId: {}, Diff: {}",
+                    supplierId, diff.abs());
+        }
     }
 
     private Warehouse findWarehouse(Long id) {

@@ -1,4 +1,4 @@
-package uz.script.wincrm.suppliers.service;
+package uz.script.wincrm.suppliers.service.impl;
 
 import org.springframework.transaction.annotation.Transactional;
 //import org.springframework.cache.annotation.Cacheable;
@@ -12,6 +12,7 @@ import uz.script.wincrm.suppliers.repository.SupplierRepository;
 import uz.script.wincrm.suppliers.dto.SupplierDTO;
 import uz.script.wincrm.suppliers.dto.SupplierFilterDTO;
 import uz.script.wincrm.suppliers.response.SupplierResponse;
+import uz.script.wincrm.suppliers.service.SupplierService;
 import uz.script.wincrm.suppliers.specification.SupplierSpecification;
 import uz.script.wincrm.utils.Status;
 

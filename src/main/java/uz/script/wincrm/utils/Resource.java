@@ -7,6 +7,7 @@ public enum Resource {
     CLIENT_GROUP,
     SUPPLIER,
     SUPPLIER_PAYMENT,
+    SUPPLIER_BALANCE,
     UNIT_TYPE,
     GOODS_GROUP,
     GOODS,

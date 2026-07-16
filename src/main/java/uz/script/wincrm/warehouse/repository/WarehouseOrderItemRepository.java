@@ -10,4 +10,7 @@ import java.util.List;
 public interface WarehouseOrderItemRepository extends JpaRepository<WarehouseOrderItem, Long> {
     List<WarehouseOrderItem> findAllByWarehouseOrderId(Long warehouseOrderId);
     List<WarehouseOrderItem> findAllByWarehouseId(Long warehouseId);
+
+    /** Berilgan mahsulot (Goods) bo'yicha barcha ombor kirim yozuvlarini qaytaradi. */
+    List<WarehouseOrderItem> findAllByGoodsId(Long goodsId);
 }

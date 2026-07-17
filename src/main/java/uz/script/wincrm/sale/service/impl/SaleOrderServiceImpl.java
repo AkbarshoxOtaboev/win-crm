@@ -16,10 +16,12 @@ import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.sale.dto.SaleOrderDTO;
+import uz.script.wincrm.sale.dto.SaleOrderHistoryDTO;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
 import uz.script.wincrm.sale.mapper.SaleOrderMapper;
 import uz.script.wincrm.sale.repository.SaleOrderRepository;
 import uz.script.wincrm.sale.response.SaleOrderResponse;
+import uz.script.wincrm.sale.service.SaleOrderHistoryService;
 import uz.script.wincrm.sale.service.SaleOrderService;
 import uz.script.wincrm.users.User;
 import uz.script.wincrm.users.UserRepository;
@@ -43,6 +45,7 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     private final WarehouseRepository warehouseRepository;
     private final UserRepository userRepository;
     private final ClientBalanceService clientBalanceService;
+    private final SaleOrderHistoryService saleOrderHistoryService;
 
     @Override
     @Auditable(
@@ -75,6 +78,14 @@ public class SaleOrderServiceImpl implements SaleOrderService {
         entity.setSalesOrderStatus(SalesOrderStatus.NEW);
 
         entity = repository.save(entity);
+
+        saleOrderHistoryService.recordHistory(
+                SaleOrderHistoryDTO.builder()
+                        .saleOrderId(entity.getId())
+                        .fromStatus(null)
+                        .toStatus(SalesOrderStatus.NEW)
+                        .build()
+        );
 
         // ... mavjud sale order item yaratish, stock/stockHistory yangilash ...
 
@@ -196,12 +207,27 @@ public class SaleOrderServiceImpl implements SaleOrderService {
         SaleOrder entity = repository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + id));
 
-        if (entity.getSalesOrderStatus().equals(SalesOrderStatus.COMPLETED)) {
+        SalesOrderStatus currentStatus = entity.getSalesOrderStatus();
+
+        // DIQQAT: avval bu yerda faqat "COMPLETED bo'lsa taqiqla" tekshiruvi bor edi,
+        // SalesOrderStatus.canTransitionTo() orqali belgilangan to'liq o'tish jadvali
+        // (masalan NEW dan to'g'ridan-to'g'ri DELIVERED'ga sakrash) ishlatilmasdi.
+        // Endi shu metoddan foydalanamiz - bu xatolikni ham tuzatadi.
+        if (!currentStatus.canTransitionTo(salesOrderStatus)) {
             throw new BadRequestException(
-                    "Cannot change order status from " + entity.getSalesOrderStatus() + " to " + salesOrderStatus);
+                    "Cannot change order status from " + currentStatus + " to " + salesOrderStatus);
         }
+
         entity.setSalesOrderStatus(salesOrderStatus);
         repository.save(entity);
+
+        saleOrderHistoryService.recordHistory(
+                SaleOrderHistoryDTO.builder()
+                        .saleOrderId(entity.getId())
+                        .fromStatus(currentStatus)
+                        .toStatus(salesOrderStatus)
+                        .build()
+        );
     }
 
     /**

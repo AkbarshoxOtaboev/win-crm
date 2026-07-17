@@ -20,7 +20,9 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.script.wincrm.sale.dto.SaleOrderDTO;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
+import uz.script.wincrm.sale.response.SaleOrderHistoryResponse;
 import uz.script.wincrm.sale.response.SaleOrderResponse;
+import uz.script.wincrm.sale.service.SaleOrderHistoryService;
 import uz.script.wincrm.sale.service.SaleOrderService;
 import uz.script.wincrm.utils.RestApiResponse;
 
@@ -34,6 +36,7 @@ import java.util.List;
 public class SaleOrderController {
 
     private final SaleOrderService service;
+    private final SaleOrderHistoryService historyService;
 
     @PostMapping("/create")
     @PreAuthorize("hasAuthority('SALE_ORDER_CREATE')")
@@ -296,6 +299,32 @@ public class SaleOrderController {
         return ResponseEntity.ok(
                 RestApiResponse.<Void>builder()
                         .message("Sale order status successfully changed")
+                        .build()
+        );
+    }
+
+    @GetMapping("/{id}/history")
+    @PreAuthorize("hasAuthority('SALE_ORDER_VIEW')")
+    @Operation(
+            summary = "Fetch sale order status history",
+            description = "Buyurtmaning barcha status o'zgarishlarini xronologik tartibda (eskisidan yangisiga) " +
+                    "qaytaradi. Only users with SALE_ORDER_VIEW permission can use this endpoint."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = SaleOrderHistoryResponse.class))
+            )
+    )
+    public ResponseEntity<?> fetchHistory(
+            @Parameter(description = "Sale order ID", example = "1")
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                RestApiResponse.<List<SaleOrderHistoryResponse>>builder()
+                        .message("Sale order history fetched successfully")
+                        .data(historyService.fetchBySaleOrderId(id))
                         .build()
         );
     }

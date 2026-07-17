@@ -7,6 +7,7 @@ import lombok.NoArgsConstructor;
 import lombok.Setter;
 import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
+import uz.script.wincrm.payment.Payment;
 import uz.script.wincrm.roles.Role;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.utils.BaseEntity;
@@ -44,4 +45,7 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user")
     private List<SaleOrder> saleOrderList;
+
+    @OneToMany(mappedBy = "user")
+    private List<Payment> payments;
 }

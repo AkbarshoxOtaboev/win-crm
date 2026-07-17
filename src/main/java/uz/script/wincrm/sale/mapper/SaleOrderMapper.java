@@ -16,6 +16,7 @@ public class SaleOrderMapper {
                 .comment(dto.getComment())
                 .orderDate(dto.getOrderDate())
                 .totalSum(dto.getTotalSum())
+                .debtSum(dto.getTotalSum())
                 .build();
     }
 

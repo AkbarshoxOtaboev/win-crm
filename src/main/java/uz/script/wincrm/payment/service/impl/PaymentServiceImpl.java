@@ -11,6 +11,7 @@ import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.clients.Client;
 import uz.script.wincrm.clients.repository.ClientRepository;
+import uz.script.wincrm.clients.service.ClientBalanceService;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.payment.Payment;
@@ -23,6 +24,8 @@ import uz.script.wincrm.payment.response.PaymentResponse;
 import uz.script.wincrm.payment.service.PaymentService;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.sale.repository.SaleOrderRepository;
+import uz.script.wincrm.users.User;
+import uz.script.wincrm.users.UserRepository;
 import uz.script.wincrm.utils.Status;
 
 import java.math.BigDecimal;
@@ -40,6 +43,8 @@ public class PaymentServiceImpl implements PaymentService {
     private final PaymentTypeRepository paymentTypeRepository;
     private final SaleOrderRepository saleOrderRepository;
     private final ClientRepository clientRepository;
+    private final UserRepository userRepository;
+    private final ClientBalanceService clientBalanceService;
 
     @Override
     @Auditable(
@@ -54,36 +59,38 @@ public class PaymentServiceImpl implements PaymentService {
 
         PaymentType paymentType = paymentTypeRepository.findById(dto.getPaymentTypeId())
                 .orElseThrow(() -> new ResourceNotFoundException("Payment type not found with id: " + dto.getPaymentTypeId()));
-
-        SaleOrder saleOrder = null;
-        if (dto.getSaleOrderId() != null) {
-            saleOrder = saleOrderRepository.findById(dto.getSaleOrderId())
-                    .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + dto.getSaleOrderId()));
-
-            BigDecimal currentPaidSum = saleOrder.getPaidSum() != null ? saleOrder.getPaidSum() : BigDecimal.ZERO;
-            BigDecimal remainingDebt = saleOrder.getTotalSum().subtract(currentPaidSum);
-
-            if (dto.getPaymentAmount().compareTo(remainingDebt) > 0) {
-                throw new BadRequestException(
-                        "Payment amount exceeds the remaining debt of the sale order. Remaining debt: " + remainingDebt);
-            }
-        }
+        User user = userRepository.findById(dto.getUserId())
+                .orElseThrow(()->new ResourceNotFoundException("User not found with id:  "+ dto.getUserId()));
+//        SaleOrder saleOrder = null;
+//        if (dto.getSaleOrderId() != null) {
+//            saleOrder = saleOrderRepository.findById(dto.getSaleOrderId())
+//                    .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + dto.getSaleOrderId()));
+//
+//            BigDecimal currentPaidSum = saleOrder.getPaidSum() != null ? saleOrder.getPaidSum() : BigDecimal.ZERO;
+//            BigDecimal remainingDebt = saleOrder.getTotalSum().subtract(currentPaidSum);
+//
+//            if (dto.getPaymentAmount().compareTo(remainingDebt) > 0) {
+//                throw new BadRequestException(
+//                        "Payment amount exceeds the remaining debt of the sale order. Remaining debt: " + remainingDebt);
+//            }
+//        }
 
 
         Payment entity = mapper.toEntity(dto);
         entity.setClient(client);
-        entity.setSaleOrder(saleOrder);
+//        entity.setSaleOrder(saleOrder);
+        entity.setUser(user);
         entity.setPaymentType(paymentType);
         entity.setStatus(Status.ACTIVE);
 
         entity = repository.save(entity);
 
-        if (saleOrder != null) {
-            recalculateSaleOrderSums(saleOrder);
-        }
-//        if (savedPayment.getClient() != null) {
-//            clientBalanceService.recalculateClientBalance(savedPayment.getClient().getId());
+//        if (saleOrder != null) {
+//            recalculateSaleOrderSums(saleOrder);
 //        }
+        if (entity.getClient() != null) {
+            clientBalanceService.recalculateClientBalance(entity.getClient().getId());
+        }
         return mapper.toResponse(entity);
     }
 

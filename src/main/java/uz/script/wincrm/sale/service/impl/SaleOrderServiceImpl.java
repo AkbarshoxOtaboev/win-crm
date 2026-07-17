@@ -11,6 +11,7 @@ import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.clients.Client;
 import uz.script.wincrm.clients.repository.ClientRepository;
+import uz.script.wincrm.clients.service.ClientBalanceService;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.sale.SaleOrder;
@@ -41,6 +42,7 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     private final ClientRepository clientRepository;
     private final WarehouseRepository warehouseRepository;
     private final UserRepository userRepository;
+    private final ClientBalanceService clientBalanceService;
 
     @Override
     @Auditable(
@@ -76,9 +78,9 @@ public class SaleOrderServiceImpl implements SaleOrderService {
 
         // ... mavjud sale order item yaratish, stock/stockHistory yangilash ...
 
-//        if (savedOrder.getClient() != null) {
-//            clientBalanceService.recalculateClientBalance(savedOrder.getClient().getId());
-//        }
+        if (entity.getClient() != null) {
+            clientBalanceService.recalculateClientBalance(entity.getClient().getId());
+        }
 
         return mapper.toResponse(entity);
     }

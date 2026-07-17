@@ -24,11 +24,15 @@ public class PaymentDTO {
     @Schema(description = "Client ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
     private Long clientId;
 
+    @NotNull(message = "User ID is required")
+    @Schema(description = "User ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    private Long userId;
+
     @Schema(description = "Sale order ID (optional — leave empty for a general/advance payment not tied to a specific order)", example = "1")
     private Long saleOrderId;
 
     @NotNull(message = "Payment type ID is required")
-    @Schema(description = "Payment type ID", example = "1", requiredMode = Schema.RequiredMode.REQUIRED)
+    @Schema(description = "Payment type ID", example = "1")
     private Long paymentTypeId;
 
     @NotNull(message = "Payment amount is required")

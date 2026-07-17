@@ -81,6 +81,7 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         entity.setWarehouse(warehouse);
         entity.setClient(client);
         entity.setSaleOrder(saleOrder);
+        entity.setUser(saleOrder.getUser());
         entity.setStatus(Status.ACTIVE);
 
         entity = repository.save(entity);
@@ -134,6 +135,13 @@ public class SaleOrderItemServiceImpl implements SaleOrderItemService {
         log.info("Fetch sale order items by client id {}", clientId);
 
         return repository.findByClientId(clientId, pageable)
+                .map(mapper::toResponse);
+    }
+
+    @Override
+    public Page<SaleOrderItemResponse> fetchByuserId(Long userId, Pageable pageable) {
+        log.info("Fetch sale order items by user id {}", userId);
+        return repository.findByUserId(userId, pageable)
                 .map(mapper::toResponse);
     }
 

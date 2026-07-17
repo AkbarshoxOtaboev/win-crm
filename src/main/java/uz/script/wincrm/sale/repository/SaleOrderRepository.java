@@ -96,4 +96,12 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
             @Param("fromDateTime") LocalDateTime fromDateTime,
             @Param("toDateTime") LocalDateTime toDateTime
     );
+
+    /**
+     * Berilgan user (sotuvchi) uchun buyurtmalar sonini va umumiy totalSum yig'indisini
+     * bitta so'rovda qaytaradi. Natija har doim bitta qatordan iborat bo'ladi:
+     * row[0] = buyurtmalar soni (Long), row[1] = umumiy summa (BigDecimal).
+     */
+    @Query("SELECT COUNT(so), COALESCE(SUM(so.totalSum), 0) FROM SaleOrder so WHERE so.user.id = :userId")
+    List<Object[]> countAndSumByUserId(@Param("userId") Long userId);
 }

@@ -128,4 +128,27 @@ public class UserController {
         );
     }
 
+    @GetMapping("/{id}/stats")
+    @PreAuthorize("hasAuthority('USER_VIEW')")
+    @Operation(
+            summary = "Fetch user statistics",
+            description = "Foydalanuvchi (sotuvchi) bo'yicha umumiy buyurtmalar soni, buyurtmalar summasi, " +
+                    "to'lovlar summasi va qarzni qaytaradi. Only users with USER_VIEW permission can use it."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = UserStatResponse.class)
+            )
+    )
+    public ResponseEntity<?> fetchUserStats(@PathVariable Long id) {
+        return ResponseEntity.ok().body(
+                RestApiResponse.<UserStatResponse>builder()
+                        .message("User statistics fetched successfully")
+                        .data(service.getUserStats(id))
+                        .build()
+        );
+    }
+
 }

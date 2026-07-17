@@ -5,6 +5,7 @@ import org.springframework.data.domain.Pageable;
 import uz.script.wincrm.exceptions.InsufficientStockException;
 import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.SaleOrder;
+import uz.script.wincrm.sale.SaleOrderItem;
 import uz.script.wincrm.sale.dto.SaleOrderItemDTO;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
 
@@ -31,6 +32,8 @@ public interface SaleOrderItemService {
     Page<SaleOrderItemResponse> fetchBySaleOrderIdPaginated(Long saleOrderId, Pageable pageable);
 
     Page<SaleOrderItemResponse> fetchByClientId(Long clientId, Pageable pageable);
+
+    Page<SaleOrderItemResponse> fetchByuserId(Long userId, Pageable pageable);
 
     Page<SaleOrderItemResponse> fetchByWarehouseId(Long warehouseId, Pageable pageable);
 

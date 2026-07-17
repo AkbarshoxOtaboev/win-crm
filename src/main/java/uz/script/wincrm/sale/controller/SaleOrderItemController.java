@@ -20,9 +20,12 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.dto.SaleOrderItemDTO;
+import uz.script.wincrm.sale.response.SaleOrderItemPageResponse;
 import uz.script.wincrm.sale.response.SaleOrderItemResponse;
 import uz.script.wincrm.sale.service.SaleOrderItemService;
+import uz.script.wincrm.utils.PageUtils;
 import uz.script.wincrm.utils.RestApiResponse;
+import uz.script.wincrm.utils.response.PageResponse;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -92,7 +95,7 @@ public class SaleOrderItemController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = SaleOrderItemPageResponse.class)
             )
     )
     public ResponseEntity<?> fetchAll(
@@ -100,9 +103,9 @@ public class SaleOrderItemController {
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<SaleOrderItemResponse>>builder()
+                RestApiResponse.<PageResponse<SaleOrderItemResponse>>builder()
                         .message("All sale order items fetched successfully")
-                        .data(service.fetchAll(pageable))
+                        .data(PageUtils.from(service.fetchAll(pageable)))
                         .build()
         );
     }
@@ -167,7 +170,7 @@ public class SaleOrderItemController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = SaleOrderItemPageResponse.class)
             )
     )
     public ResponseEntity<?> fetchBySaleOrderIdPaginated(
@@ -177,9 +180,9 @@ public class SaleOrderItemController {
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<SaleOrderItemResponse>>builder()
+                RestApiResponse.<PageResponse<SaleOrderItemResponse>>builder()
                         .message("Sale order items fetched successfully")
-                        .data(service.fetchBySaleOrderIdPaginated(saleOrderId, pageable))
+                        .data(PageUtils.from(service.fetchBySaleOrderIdPaginated(saleOrderId, pageable)))
                         .build()
         );
     }
@@ -194,7 +197,7 @@ public class SaleOrderItemController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = SaleOrderItemPageResponse.class)
             )
     )
     public ResponseEntity<?> fetchByClientId(
@@ -204,12 +207,40 @@ public class SaleOrderItemController {
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<SaleOrderItemResponse>>builder()
+                RestApiResponse.<PageResponse<SaleOrderItemResponse>>builder()
                         .message("Sale order items for client fetched successfully")
-                        .data(service.fetchByClientId(clientId, pageable))
+                        .data(PageUtils.from(service.fetchByClientId(clientId, pageable)))
                         .build()
         );
     }
+
+    @GetMapping("/user/{userId}")
+    @PreAuthorize("hasAuthority('SALE_ORDER_ITEM_VIEW')")
+    @Operation(
+            summary = "Fetch sale order items by user id",
+            description = "Only users with SALE_ORDER_ITEM_VIEW permission can use this endpoint."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SaleOrderItemPageResponse.class)
+            )
+    )
+    public ResponseEntity<?> fetchByUserId(
+            @Parameter(description = "User ID", example = "1")
+            @PathVariable Long userId,
+            @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
+            Pageable pageable
+    ) {
+        return ResponseEntity.ok(
+                RestApiResponse.<PageResponse<SaleOrderItemResponse>>builder()
+                        .message("Sale order items for client fetched successfully")
+                        .data(PageUtils.from(service.fetchByuserId(userId, pageable)))
+                        .build()
+        );
+    }
+
 
     @GetMapping("/warehouse/{warehouseId}")
     @PreAuthorize("hasAuthority('SALE_ORDER_ITEM_VIEW')")

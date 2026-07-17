@@ -10,6 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.payment.Payment;
 import uz.script.wincrm.roles.Role;
 import uz.script.wincrm.sale.SaleOrder;
+import uz.script.wincrm.sale.SaleOrderItem;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 
@@ -48,4 +49,7 @@ public class User extends BaseEntity {
 
     @OneToMany(mappedBy = "user")
     private List<Payment> payments;
+
+    @OneToMany(mappedBy = "user")
+    private List<SaleOrderItem> saleOrderItems;
 }

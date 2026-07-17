@@ -9,4 +9,5 @@ public interface UserService {
     UserResponse update(Long id, UserDTO dto);
     void delete(Long id);
     void activeOrDisabledUser(Long id);
+    UserStatResponse getUserStats(Long userId);
 }

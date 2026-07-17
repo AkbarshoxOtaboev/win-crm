@@ -25,6 +25,8 @@ public interface SaleOrderItemRepository extends JpaRepository<SaleOrderItem, Lo
 
     Page<SaleOrderItem> findByClientId(Long clientId, Pageable pageable);
 
+    Page<SaleOrderItem> findByUserId(Long userId, Pageable pageable);
+
     Page<SaleOrderItem> findByWarehouseId(Long warehouseId, Pageable pageable);
 
     Page<SaleOrderItem> findByGoodsId(Long goodsId, Pageable pageable);

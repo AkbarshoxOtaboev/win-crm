@@ -14,12 +14,15 @@ import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.exceptions.AlreadyExistsException;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
+import uz.script.wincrm.payment.repository.PaymentRepository;
 import uz.script.wincrm.roles.Role;
 import uz.script.wincrm.roles.RoleRepository;
 import uz.script.wincrm.roles.RoleResponse;
+import uz.script.wincrm.sale.repository.SaleOrderRepository;
 import uz.script.wincrm.storage.StorageService;
 import uz.script.wincrm.utils.Status;
 
+import java.math.BigDecimal;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -35,7 +38,9 @@ public class UserServiceImplement implements UserService {
     private final RoleRepository roleRepository;
     private final PasswordEncoder passwordEncoder;
     private final StorageService storageService;
-
+    private final SaleOrderRepository saleOrderRepository;
+    private final PaymentRepository paymentRepository;
+    private final UserRepository userRepository;
     @Override
 //    @Caching(evict = {
 //            @CacheEvict(value = "users", allEntries = true)
@@ -211,6 +216,29 @@ public class UserServiceImplement implements UserService {
                     "Status cannot be changed"
             );
         }
+    }
+
+    @Override
+    @Transactional
+    public UserStatResponse getUserStats(Long userId) {
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + userId));
+
+        List<Object[]> result = saleOrderRepository.countAndSumByUserId(userId);
+        Object[] row = result.get(0);
+        Long totalOrdersCount = (Long) row[0];
+        BigDecimal totalOrdersSum = (BigDecimal) row[1];
+
+        BigDecimal totalPaidSum = paymentRepository.sumPaymentAmountByUserId(userId);
+
+        return UserStatResponse.builder()
+                .userId(user.getId())
+                .userFullName(user.getFullName()) // DIQQAT: pastga qarang
+                .totalOrdersCount(totalOrdersCount)
+                .totalOrdersSum(totalOrdersSum)
+                .totalPaidSum(totalPaidSum)
+                .totalDebt(totalOrdersSum.subtract(totalPaidSum))
+                .build();
     }
 
     private UserResponse mapUserToUserResponse(User user) {

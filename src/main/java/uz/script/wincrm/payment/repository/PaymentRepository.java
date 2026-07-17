@@ -48,4 +48,11 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
             @Param("fromDateTime") LocalDateTime fromDateTime,
             @Param("toDateTime") LocalDateTime toDateTime
     );
+
+    /**
+     * Berilgan user (to'lovni qabul qilgan/kiritgan xodim) bo'yicha barcha
+     * paymentAmount qiymatlarining yig'indisini qaytaradi.
+     */
+    @Query("SELECT COALESCE(SUM(p.paymentAmount), 0) FROM Payment p WHERE p.user.id = :userId")
+    BigDecimal sumPaymentAmountByUserId(@Param("userId") Long userId);
 }

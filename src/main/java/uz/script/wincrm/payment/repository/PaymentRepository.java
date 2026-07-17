@@ -8,6 +8,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uz.script.wincrm.payment.Payment;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -35,5 +36,16 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
     List<Payment> findAllInRangeWithType(
             @Param("fromDate") LocalDateTime fromDate,
             @Param("toDate") LocalDateTime toDate
+    );
+
+    @Query("SELECT COALESCE(SUM(p.paymentAmount), 0) FROM Payment p WHERE p.client.id = :clientId")
+    BigDecimal sumPaymentAmountByClientId(@Param("clientId") Long clientId);
+
+    @Query("SELECT COALESCE(SUM(p.paymentAmount), 0) FROM Payment p " +
+            "WHERE p.client.id = :clientId AND p.paymentDate BETWEEN :fromDateTime AND :toDateTime")
+    BigDecimal sumPaymentAmountByClientIdAndDateRange(
+            @Param("clientId") Long clientId,
+            @Param("fromDateTime") LocalDateTime fromDateTime,
+            @Param("toDateTime") LocalDateTime toDateTime
     );
 }

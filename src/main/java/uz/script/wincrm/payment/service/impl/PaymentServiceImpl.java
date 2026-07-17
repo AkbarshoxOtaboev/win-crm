@@ -81,7 +81,9 @@ public class PaymentServiceImpl implements PaymentService {
         if (saleOrder != null) {
             recalculateSaleOrderSums(saleOrder);
         }
-
+//        if (savedPayment.getClient() != null) {
+//            clientBalanceService.recalculateClientBalance(savedPayment.getClient().getId());
+//        }
         return mapper.toResponse(entity);
     }
 

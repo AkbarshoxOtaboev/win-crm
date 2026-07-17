@@ -10,6 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.payment.Payment;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.sale.SaleOrderItem;
+import uz.script.wincrm.suppliers.SupplierBalance;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
 
@@ -64,4 +65,11 @@ public class Client extends BaseEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "client_group_id")
     private ClientGroup clientGroup;
+
+    @OneToOne(
+            mappedBy = "client",
+            cascade = CascadeType.ALL,
+            orphanRemoval = true
+    )
+    private ClientBalance balance;
 }

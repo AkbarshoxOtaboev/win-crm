@@ -8,6 +8,7 @@ public interface TableName {
     String AUDIT_LOGS = "audit_logs";
     String CLIENTS = "clients";
     String CLIENT_GROUPS="client_groups";
+    String CLIENT_BALANCES="client_balances";
     String SUPPLIERS = "suppliers";
     String SUPPLIER_PAYMENTS= "supplier_payments";
     String SUPPLIER_BALANCE="supplier_BALANCE";

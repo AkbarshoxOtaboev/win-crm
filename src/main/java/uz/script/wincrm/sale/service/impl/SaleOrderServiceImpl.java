@@ -74,6 +74,12 @@ public class SaleOrderServiceImpl implements SaleOrderService {
 
         entity = repository.save(entity);
 
+        // ... mavjud sale order item yaratish, stock/stockHistory yangilash ...
+
+//        if (savedOrder.getClient() != null) {
+//            clientBalanceService.recalculateClientBalance(savedOrder.getClient().getId());
+//        }
+
         return mapper.toResponse(entity);
     }
 

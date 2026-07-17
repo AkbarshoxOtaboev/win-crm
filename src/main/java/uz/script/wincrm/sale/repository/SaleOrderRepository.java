@@ -85,4 +85,15 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
             @Param("endDate") LocalDateTime endDate,
             Pageable pageable
     );
+
+    @Query("SELECT COALESCE(SUM(s.totalSum), 0) FROM SaleOrder s WHERE s.client.id = :clientId")
+    BigDecimal sumTotalSumByClientId(@Param("clientId") Long clientId);
+
+    @Query("SELECT COALESCE(SUM(s.totalSum), 0) FROM SaleOrder s " +
+            "WHERE s.client.id = :clientId AND s.orderDate BETWEEN :fromDateTime AND :toDateTime")
+    BigDecimal sumTotalSumByClientIdAndDateRange(
+            @Param("clientId") Long clientId,
+            @Param("fromDateTime") LocalDateTime fromDateTime,
+            @Param("toDateTime") LocalDateTime toDateTime
+    );
 }

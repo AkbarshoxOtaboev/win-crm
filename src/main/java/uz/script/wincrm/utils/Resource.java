@@ -5,6 +5,7 @@ public enum Resource {
     ROLE,
     CLIENT,
     CLIENT_GROUP,
+    CLIENT_BALANCE,
     SUPPLIER,
     SUPPLIER_PAYMENT,
     SUPPLIER_BALANCE,

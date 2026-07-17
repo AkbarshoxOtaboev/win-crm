@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 import uz.script.wincrm.sale.SaleOrder;
+import uz.script.wincrm.sale.enums.SalesOrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -104,4 +105,17 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
      */
     @Query("SELECT COUNT(so), COALESCE(SUM(so.totalSum), 0) FROM SaleOrder so WHERE so.user.id = :userId")
     List<Object[]> countAndSumByUserId(@Param("userId") Long userId);
+
+    /**
+     * Rejalashtirilgan yetkazish sanasi (plannedDeliveryDate) o'tib ketgan, lekin buyurtma
+     * hali "yetkazilgan/yakunlangan/bekor qilingan" holatlaridan biriga yetmagan
+     * (ya'ni kechikkan) buyurtmalarni topadi. "Vaqtida yetkazilyaptimi" nazorati uchun.
+     */
+    @Query("SELECT so FROM SaleOrder so WHERE so.plannedDeliveryDate IS NOT NULL " +
+            "AND so.plannedDeliveryDate < :now " +
+            "AND so.salesOrderStatus NOT IN :excludedStatuses")
+    List<SaleOrder> findOverdueOrders(
+            @Param("now") LocalDateTime now,
+            @Param("excludedStatuses") List<SalesOrderStatus> excludedStatuses
+    );
 }

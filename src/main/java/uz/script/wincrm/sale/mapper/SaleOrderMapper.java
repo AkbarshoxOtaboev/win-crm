@@ -15,6 +15,8 @@ public class SaleOrderMapper {
         return SaleOrder.builder()
                 .comment(dto.getComment())
                 .orderDate(dto.getOrderDate())
+                .plannedReadyDate(dto.getPlannedReadyDate())
+                .plannedDeliveryDate(dto.getPlannedDeliveryDate())
                 .totalSum(dto.getTotalSum())
                 .debtSum(dto.getTotalSum())
                 .build();
@@ -26,6 +28,12 @@ public class SaleOrderMapper {
         }
         if (dto.getOrderDate() != null) {
             entity.setOrderDate(dto.getOrderDate());
+        }
+        if (dto.getPlannedReadyDate() != null) {
+            entity.setPlannedReadyDate(dto.getPlannedReadyDate());
+        }
+        if (dto.getPlannedDeliveryDate() != null) {
+            entity.setPlannedDeliveryDate(dto.getPlannedDeliveryDate());
         }
         if (dto.getTotalSum() != null) {
             entity.setTotalSum(dto.getTotalSum());
@@ -46,6 +54,8 @@ public class SaleOrderMapper {
                 .userFullName(entity.getUser() != null ? entity.getUser().getFullName() : null)
                 .comment(entity.getComment())
                 .orderDate(entity.getOrderDate())
+                .plannedReadyDate(entity.getPlannedReadyDate())
+                .plannedDeliveryDate(entity.getPlannedDeliveryDate())
                 .totalSum(entity.getTotalSum())
                 .paidSum(entity.getPaidSum())
                 .debtSum(entity.getDebtSum())

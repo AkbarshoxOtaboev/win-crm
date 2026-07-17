@@ -43,6 +43,12 @@ public class SaleOrderResponse {
     @Schema(description = "Order date and time", example = "2026-07-04T09:30:15")
     private LocalDateTime orderDate;
 
+    @Schema(description = "Buyurtma tayyor bo'lishi rejalashtirilgan sana", example = "2026-07-17T00:00:00")
+    private LocalDateTime plannedReadyDate;
+
+    @Schema(description = "Mijozga yetkazilishi rejalashtirilgan sana", example = "2026-07-18T00:00:00")
+    private LocalDateTime plannedDeliveryDate;
+
     @Schema(description = "Total sum of the sale order", example = "5000.00")
     private BigDecimal totalSum;
 

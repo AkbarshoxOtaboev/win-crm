@@ -46,6 +46,20 @@ public class SaleOrder extends BaseEntity {
     @Column(nullable = false)
     private LocalDateTime orderDate;
 
+    /**
+     * Buyurtmani yaratgan xodim tomonidan (odatda create paytida) qo'lda belgilanadigan,
+     * "buyurtma qachon tayyor bo'lishi rejalashtirilgani" sanasi. Statusdan mustaqil -
+     * avtomatik o'rnatilmaydi, faqat kiritilgan qiymat saqlanadi.
+     */
+    private LocalDateTime plannedReadyDate;
+
+    /**
+     * Buyurtmani yaratgan xodim tomonidan qo'lda belgilanadigan,
+     * "mijozga qachon yetkazilishi rejalashtirilgani" sanasi. "Vaqtida yetkazilyaptimi"
+     * nazoratini yuritish uchun ishlatiladi (haqiqiy DELIVERED bo'lgan vaqt bilan solishtiriladi).
+     */
+    private LocalDateTime plannedDeliveryDate;
+
     @Column(nullable = false)
     private BigDecimal totalSum;
 

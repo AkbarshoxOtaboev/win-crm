@@ -1,6 +1,7 @@
 package uz.script.wincrm.sale.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
@@ -37,7 +38,38 @@ public class SaleOrderDTO {
     @Schema(description = "Order date and time", required = true)
     private LocalDateTime orderDate;
 
+    @Schema(
+            description = "Buyurtma tayyor bo'lishi rejalashtirilgan sana (ixtiyoriy)",
+            example = "2026-07-17T00:00:00"
+    )
+    private LocalDateTime plannedReadyDate;
+
+    @Schema(
+            description = "Mijozga yetkazilishi rejalashtirilgan sana (ixtiyoriy). " +
+                    "Buyurtma vaqtida yetkazilyaptimi nazorati shu sana asosida yuritiladi.",
+            example = "2026-07-18T00:00:00"
+    )
+    private LocalDateTime plannedDeliveryDate;
+
     @Schema(description = "Total sum of the sale order")
     @NotNull(message = "Order date is required")
     private BigDecimal totalSum;
+
+    @AssertTrue(message = "Planned ready date orderDate'dan oldin bo'lishi mumkin emas")
+    @Schema(hidden = true)
+    public boolean isPlannedReadyDateValid() {
+        if (plannedReadyDate == null || orderDate == null) {
+            return true;
+        }
+        return !plannedReadyDate.isBefore(orderDate);
+    }
+
+    @AssertTrue(message = "Planned delivery date plannedReadyDate'dan oldin bo'lishi mumkin emas")
+    @Schema(hidden = true)
+    public boolean isPlannedDeliveryDateValid() {
+        if (plannedDeliveryDate == null || plannedReadyDate == null) {
+            return true;
+        }
+        return !plannedDeliveryDate.isBefore(plannedReadyDate);
+    }
 }

@@ -23,6 +23,7 @@ public interface TableName {
     String SALE_ORDER_HISTORY = "sale_order_history";
     String STOCKS = "stocks";
     String STOCK_HISTORIES = "stock_histories";
+    String STOCK_TRANSFERS = "stock_transfers";
     String PAYMENT_TYPES = "payment_types";
     String PAYMENTS = "payments";
     String PAYMENT_HISTORIES = "payment_histories";

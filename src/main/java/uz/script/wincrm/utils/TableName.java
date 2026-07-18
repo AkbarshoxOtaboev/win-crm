@@ -9,6 +9,7 @@ public interface TableName {
     String CLIENTS = "clients";
     String CLIENT_GROUPS="client_groups";
     String CLIENT_BALANCES="client_balances";
+    String CLIENT_NOTES = "client_notes";
     String SUPPLIERS = "suppliers";
     String SUPPLIER_PAYMENTS= "supplier_payments";
     String SUPPLIER_BALANCE="supplier_BALANCE";
@@ -18,6 +19,8 @@ public interface TableName {
     String WAREHOUSE = "warehouse";
     String WAREHOUSE_ORDERS = "warehouse_order";
     String WAREHOUSE_ORDER_ITEMS = "warehouse_order_items";
+    String INVENTORY_CHECKS = "inventory_checks";
+    String INVENTORY_CHECK_ITEMS = "inventory_check_items";
     String SALE_ORDERS = "sale_orders";
     String SALE_ORDER_ITEMS = "sale_order_items";
     String SALE_ORDER_HISTORY = "sale_order_history";

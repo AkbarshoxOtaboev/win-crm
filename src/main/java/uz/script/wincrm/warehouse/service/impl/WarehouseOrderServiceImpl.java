@@ -8,14 +8,18 @@ import org.springframework.stereotype.Service;
 import uz.script.wincrm.audit.AuditAction;
 import uz.script.wincrm.audit.Auditable;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
+import uz.script.wincrm.stock.service.StockService;
 import uz.script.wincrm.suppliers.Supplier;
 import uz.script.wincrm.suppliers.repository.SupplierRepository;
 import uz.script.wincrm.suppliers.service.SupplierBalanceService;
 import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.WarehouseOrder;
+import uz.script.wincrm.warehouse.WarehouseOrderItem;
 import uz.script.wincrm.warehouse.dto.WarehouseOrderDTO;
+import uz.script.wincrm.warehouse.enums.WarehouseOrderStatus;
 import uz.script.wincrm.warehouse.mapper.WarehouseOrderMapper;
+import uz.script.wincrm.warehouse.repository.WarehouseOrderItemRepository;
 import uz.script.wincrm.warehouse.repository.WarehouseOrderRepository;
 import uz.script.wincrm.warehouse.repository.WarehouseRepository;
 import uz.script.wincrm.warehouse.response.WarehouseOrderResponse;
@@ -36,6 +40,8 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
     private final SupplierRepository supplierRepository;
     private final WarehouseOrderMapper mapper;
     private final SupplierBalanceService supplierBalanceService;
+    private final WarehouseOrderItemRepository warehouseOrderItemRepository;
+    private final StockService stockService;
 
     @Override
     @Auditable(
@@ -167,21 +173,58 @@ public class WarehouseOrderServiceImpl implements WarehouseOrderService {
         log.info("Delete warehouse order with id {}", id);
 
         WarehouseOrder order = repository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("Warehouse order not found with id: " + id));
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse order not found with id: " + id));
+
+        if (order.getOrderStatus() == WarehouseOrderStatus.TRANSFERRED) {
+            List<WarehouseOrderItem> items = warehouseOrderItemRepository.findAllByWarehouseOrderId(id);
+            for (WarehouseOrderItem item : items) {
+                if (item.getStatus() == Status.ACTIVE) {
+                    stockService.decreaseStock(item.getGoods().getId(), item.getWarehouse().getId(), item.getCount());
+                }
+            }
+            log.info("Order was TRANSFERRED, stock reverted for {} items", items.size());
+        }
 
         order.setStatus(Status.DELETED);
         repository.save(order);
 
-        // Order butunlay o'chirilganda, undagi item'lar orqali yig'ilgan
-        // totalSum ham supplier balansidan ayiriladi.
         BigDecimal totalSum = order.getTotalSum() != null ? order.getTotalSum() : BigDecimal.ZERO;
-
         if (totalSum.compareTo(BigDecimal.ZERO) != 0) {
             supplierBalanceService.decreasePurchase(order.getSupplier().getId(), totalSum);
-
             log.info("Supplier balance decreased by purchase. SupplierId: {}, Sum: {}",
                     order.getSupplier().getId(), totalSum);
         }
+    }
+
+    @Override
+    @Auditable(action = AuditAction.UPDATE, entity = "WarehouseOrder")
+    public WarehouseOrderResponse transferToWarehouse(Long id) {
+        log.info("Transfer warehouse order to stock, id {}", id);
+
+        WarehouseOrder order = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Warehouse order not found with id: " + id));
+
+        if (order.getOrderStatus() == WarehouseOrderStatus.TRANSFERRED) {
+            throw new IllegalStateException("Order allaqachon omborga transfer qilingan: " + id);
+        }
+
+        List<WarehouseOrderItem> items = warehouseOrderItemRepository.findAllByWarehouseOrderId(id)
+                .stream()
+                .filter(i -> i.getStatus() == Status.ACTIVE)
+                .toList();
+
+        if (items.isEmpty()) {
+            throw new IllegalStateException("Item'lari yo'q orderni transfer qilib bo'lmaydi: " + id);
+        }
+
+        for (WarehouseOrderItem item : items) {
+            stockService.increaseStock(item.getGoods().getId(), item.getWarehouse().getId(), item.getCount());
+        }
+
+        order.setOrderStatus(WarehouseOrderStatus.TRANSFERRED);
+        order = repository.save(order);
+
+        log.info("Order transferred to stock. OrderId: {}, items: {}", id, items.size());
+        return mapper.toResponse(order);
     }
 }

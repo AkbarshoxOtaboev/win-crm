@@ -6,6 +6,7 @@ import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.WarehouseOrder;
 import uz.script.wincrm.warehouse.dto.WarehouseOrderDTO;
+import uz.script.wincrm.warehouse.enums.WarehouseOrderStatus;
 import uz.script.wincrm.warehouse.response.WarehouseOrderResponse;
 
 import java.math.BigDecimal;
@@ -20,6 +21,7 @@ public class WarehouseOrderMapper {
                 .comment(dto.getComment())
                 .arrivalDate(dto.getArrivalDate())
                 .totalSum(BigDecimal.ZERO)
+                .orderStatus(WarehouseOrderStatus.NEW)
                 .status(Status.ACTIVE)
                 .build();
     }

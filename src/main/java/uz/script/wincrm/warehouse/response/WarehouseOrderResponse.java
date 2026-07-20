@@ -5,6 +5,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
 import uz.script.wincrm.utils.Status;
+import uz.script.wincrm.warehouse.enums.WarehouseOrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,6 +39,9 @@ public class WarehouseOrderResponse {
 
     @Schema(description = "Total sum of the order, computed from its items", example = "1250000.00")
     private BigDecimal totalSum;
+
+    @Schema(description = "NEW - hali omborga tushmagan, TRANSFERRED - Stock'ga qo'shilgan", example = "NEW", implementation = WarehouseOrderStatus.class)
+    private WarehouseOrderStatus orderStatus;
 
     @Schema(description = "Current order status", example = "ACTIVE", implementation = Status.class)
     private Status status;

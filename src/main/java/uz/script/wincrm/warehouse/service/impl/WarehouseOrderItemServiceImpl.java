@@ -19,6 +19,7 @@ import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.WarehouseOrder;
 import uz.script.wincrm.warehouse.WarehouseOrderItem;
 import uz.script.wincrm.warehouse.dto.WarehouseOrderItemDTO;
+import uz.script.wincrm.warehouse.enums.WarehouseOrderStatus;
 import uz.script.wincrm.warehouse.mapper.WarehouseOrderItemMapper;
 import uz.script.wincrm.warehouse.repository.WarehouseOrderItemRepository;
 import uz.script.wincrm.warehouse.repository.WarehouseOrderRepository;
@@ -68,8 +69,13 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
         item.setCreatedUsername(username);
 
         item = repository.save(item);
-        // Omborga mahsulot kirim qilindi -> Stockga yozamiz (Stock + StockHistory avtomatik)
-        stockService.increaseStock(dto.getGoodsId(), dto.getWarehouseId(), dto.getCount());
+        // Order hali NEW bo'lsa — item Stock'ga qo'shilmaydi.
+        // Barcha item'lar birdan WarehouseOrderServiceImpl#transferToWarehouse chaqirilganda Stock'ga tushadi.
+        // Order allaqachon TRANSFERRED bo'lsa (tuzatish/qo'shimcha kirim) — yangi item darhol Stock'ga qo'shiladi,
+        // chunki shu orderning boshqa item'lari allaqachon Stock'da.
+        if (warehouseOrder.getOrderStatus() == WarehouseOrderStatus.TRANSFERRED) {
+            stockService.increaseStock(dto.getGoodsId(), dto.getWarehouseId(), dto.getCount());
+        }
         recalculateOrderTotalSum(warehouseOrder);
 
         return mapper.toResponse(item);
@@ -143,7 +149,9 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 
         WarehouseOrder previousOrder = item.getWarehouseOrder();
 
-        // Stockni to'g'irlash uchun ESKI qiymatlarni mapper ustidan yozib yuborishidan oldin saqlab qolamiz
+        boolean wasInStock = previousOrder.getOrderStatus() == WarehouseOrderStatus.TRANSFERRED;
+        boolean willBeInStock = warehouseOrder.getOrderStatus() == WarehouseOrderStatus.TRANSFERRED;
+
         Long previousGoodsId = item.getGoods().getId();
         Long previousWarehouseId = item.getWarehouse().getId();
         BigDecimal previousCount = item.getCount();
@@ -153,10 +161,14 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
         item.setCreatedUsername(username);
         item = repository.save(item);
 
-        // Eski goods/warehouse bo'yicha qo'shilgan miqdorni Stockdan ayiramiz (chiqim)
-        stockService.decreaseStock(previousGoodsId, previousWarehouseId, previousCount);
-        // Yangi goods/warehouse/count bo'yicha qayta Stockga qo'shamiz (kirim)
-        stockService.increaseStock(dto.getGoodsId(), dto.getWarehouseId(), dto.getCount());
+        // Faqat item avval haqiqatan Stockda hisobga olingan bo'lsa (order TRANSFERRED edi) - eskisini ayiramiz
+        if (wasInStock) {
+            stockService.decreaseStock(previousGoodsId, previousWarehouseId, previousCount);
+        }
+       // Faqat item endi tegishli bo'ladigan order TRANSFERRED bo'lsa - yangisini qo'shamiz
+        if (willBeInStock) {
+            stockService.increaseStock(dto.getGoodsId(), dto.getWarehouseId(), dto.getCount());
+        }
 
         recalculateOrderTotalSum(warehouseOrder);
         if (previousOrder != null && !previousOrder.getId().equals(warehouseOrder.getId())) {
@@ -165,6 +177,7 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 
         return mapper.toResponse(item);
     }
+
     @Override
     @Auditable(
             action = AuditAction.DELETE,
@@ -183,6 +196,10 @@ public class WarehouseOrderItemServiceImpl implements WarehouseOrderItemService 
 
         item.setStatus(Status.DELETED);
         repository.save(item);
+
+        if (item.getWarehouseOrder().getOrderStatus() == WarehouseOrderStatus.TRANSFERRED) {
+            stockService.decreaseStock(item.getGoods().getId(), item.getWarehouse().getId(), item.getCount());
+        }
 
         recalculateOrderTotalSum(item.getWarehouseOrder());
     }

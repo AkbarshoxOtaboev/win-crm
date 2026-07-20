@@ -10,6 +10,7 @@ import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.suppliers.Supplier;
 import uz.script.wincrm.utils.BaseEntity;
 import uz.script.wincrm.utils.TableName;
+import uz.script.wincrm.warehouse.enums.WarehouseOrderStatus;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -38,6 +39,10 @@ public class WarehouseOrder extends BaseEntity {
     private LocalDateTime arrivalDate;
 
     private BigDecimal totalSum;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "order_status", nullable = false)
+    private WarehouseOrderStatus orderStatus;
 
 
 }

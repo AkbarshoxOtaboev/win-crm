@@ -13,4 +13,5 @@ public interface WarehouseOrderService {
     List<WarehouseOrderResponse> fetchBySupplierId(Long supplierId);
     WarehouseOrderResponse update(Long id, WarehouseOrderDTO dto);
     void delete(Long id);
+    WarehouseOrderResponse transferToWarehouse(Long id);
 }

@@ -189,4 +189,18 @@ public class WarehouseOrderController {
                         .build()
         );
     }
+
+    @PatchMapping("/{id}/transfer")
+    @PreAuthorize("hasAuthority('WAREHOUSE_ORDER_EDIT')")
+    @Operation(summary = "Transfer warehouse order to stock",
+            description = "Order statusini TRANSFERRED qiladi va item'larni Stock'ga qo'shadi.")
+    public ResponseEntity<?> transferToWarehouse(@PathVariable Long id) {
+        WarehouseOrderResponse response = service.transferToWarehouse(id);
+        return ResponseEntity.ok(
+                RestApiResponse.<WarehouseOrderResponse>builder()
+                        .message("Warehouse order omborga muvaffaqiyatli transfer qilindi")
+                        .data(response)
+                        .build()
+        );
+    }
 }

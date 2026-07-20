@@ -12,13 +12,14 @@ public class SaleOrderMapper {
         if (dto == null) {
             return null;
         }
+        // DIQQAT: totalSum, originalTotalSum, discountAmount, debtSum bu yerda O'RNATILMAYDI.
+        // Ular servisda chegirma hisoblangandan KEYIN o'rnatiladi - aks holda chegirmasiz
+        // asl summa noto'g'ri debt/total sifatida yozilib qolardi (eski bug).
         return SaleOrder.builder()
                 .comment(dto.getComment())
                 .orderDate(dto.getOrderDate())
                 .plannedReadyDate(dto.getPlannedReadyDate())
                 .plannedDeliveryDate(dto.getPlannedDeliveryDate())
-                .totalSum(dto.getTotalSum())
-                .debtSum(dto.getTotalSum())
                 .build();
     }
 
@@ -35,9 +36,7 @@ public class SaleOrderMapper {
         if (dto.getPlannedDeliveryDate() != null) {
             entity.setPlannedDeliveryDate(dto.getPlannedDeliveryDate());
         }
-        if (dto.getTotalSum() != null) {
-            entity.setTotalSum(dto.getTotalSum());
-        }
+        // totalSum bu yerda o'rnatilmaydi - servisda originalTotalSum + chegirma qayta qo'llanadi
     }
 
     public SaleOrderResponse toResponse(SaleOrder entity) {
@@ -56,6 +55,10 @@ public class SaleOrderMapper {
                 .orderDate(entity.getOrderDate())
                 .plannedReadyDate(entity.getPlannedReadyDate())
                 .plannedDeliveryDate(entity.getPlannedDeliveryDate())
+                .originalTotalSum(entity.getOriginalTotalSum())
+                .discountType(entity.getDiscountType())
+                .discountValue(entity.getDiscountValue())
+                .discountAmount(entity.getDiscountAmount())
                 .totalSum(entity.getTotalSum())
                 .paidSum(entity.getPaidSum())
                 .debtSum(entity.getDebtSum())

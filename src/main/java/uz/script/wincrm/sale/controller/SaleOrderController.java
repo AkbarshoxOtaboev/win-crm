@@ -18,8 +18,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
+import uz.script.wincrm.sale.dto.ApplyDiscountDTO;
 import uz.script.wincrm.sale.dto.SaleOrderDTO;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
+import uz.script.wincrm.sale.response.SaleOrderDiscountHistoryResponse;
 import uz.script.wincrm.sale.response.SaleOrderHistoryResponse;
 import uz.script.wincrm.sale.response.SaleOrderResponse;
 import uz.script.wincrm.sale.service.SaleOrderHistoryService;
@@ -270,7 +272,6 @@ public class SaleOrderController {
         );
     }
 
-
     @PatchMapping("/{id}/status")
     @PreAuthorize("hasAuthority('SALE_ORDER_EDIT')")
     @Operation(
@@ -299,6 +300,63 @@ public class SaleOrderController {
         return ResponseEntity.ok(
                 RestApiResponse.<Void>builder()
                         .message("Sale order status successfully changed")
+                        .build()
+        );
+    }
+
+    @PatchMapping("/{id}/discount")
+    @PreAuthorize("hasAuthority('SALE_ORDER_DISCOUNT')")
+    @Operation(
+            summary = "Apply discount to sale order",
+            description = "Buyurtmaga chegirma qo'llaydi. Faqat totalSum'ga ta'sir qiladi " +
+                    "(totalSum = originalTotalSum - discountAmount). Yakuniy holatdagi " +
+                    "(COMPLETED/CANCELLED) buyurtmaga qo'llab bo'lmaydi. " +
+                    "Only users with SALE_ORDER_DISCOUNT permission can use this endpoint."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    schema = @Schema(implementation = SaleOrderResponse.class)
+            )
+    )
+    public ResponseEntity<?> applyDiscount(
+            @Parameter(description = "Sale order ID", example = "1")
+            @PathVariable Long id,
+            @Valid @RequestBody ApplyDiscountDTO dto
+    ) {
+        SaleOrderResponse response = service.applyDiscount(id, dto);
+
+        return ResponseEntity.ok(
+                RestApiResponse.<SaleOrderResponse>builder()
+                        .message("Discount successfully applied")
+                        .data(response)
+                        .build()
+        );
+    }
+
+    @GetMapping("/{id}/discount-history")
+    @PreAuthorize("hasAuthority('SALE_ORDER_VIEW')")
+    @Operation(
+            summary = "Fetch sale order discount history",
+            description = "Buyurtmaga qo'llangan barcha chegirmalarni xronologik tartibda qaytaradi. " +
+                    "Only users with SALE_ORDER_VIEW permission can use this endpoint."
+    )
+    @ApiResponse(
+            responseCode = "200",
+            content = @Content(
+                    mediaType = "application/json",
+                    array = @ArraySchema(schema = @Schema(implementation = SaleOrderDiscountHistoryResponse.class))
+            )
+    )
+    public ResponseEntity<?> fetchDiscountHistory(
+            @Parameter(description = "Sale order ID", example = "1")
+            @PathVariable Long id
+    ) {
+        return ResponseEntity.ok(
+                RestApiResponse.<List<SaleOrderDiscountHistoryResponse>>builder()
+                        .message("Discount history fetched successfully")
+                        .data(service.fetchDiscountHistory(id))
                         .build()
         );
     }

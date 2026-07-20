@@ -15,12 +15,19 @@ import uz.script.wincrm.clients.service.ClientBalanceService;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.exceptions.ResourceNotFoundException;
 import uz.script.wincrm.sale.SaleOrder;
+import uz.script.wincrm.sale.dto.ApplyDiscountDTO;
 import uz.script.wincrm.sale.dto.SaleOrderDTO;
+import uz.script.wincrm.sale.dto.SaleOrderDiscountHistoryDTO;
 import uz.script.wincrm.sale.dto.SaleOrderHistoryDTO;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
+import uz.script.wincrm.sale.mapper.SaleOrderDiscountHistoryMapper;
 import uz.script.wincrm.sale.mapper.SaleOrderMapper;
+import uz.script.wincrm.sale.repository.SaleOrderDiscountHistoryRepository;
 import uz.script.wincrm.sale.repository.SaleOrderRepository;
+import uz.script.wincrm.sale.response.SaleOrderDiscountHistoryResponse;
 import uz.script.wincrm.sale.response.SaleOrderResponse;
+import uz.script.wincrm.sale.service.DiscountCalculator;
+import uz.script.wincrm.sale.service.SaleOrderDiscountHistoryRecorder;
 import uz.script.wincrm.sale.service.SaleOrderHistoryService;
 import uz.script.wincrm.sale.service.SaleOrderService;
 import uz.script.wincrm.users.User;
@@ -29,6 +36,7 @@ import uz.script.wincrm.utils.Status;
 import uz.script.wincrm.warehouse.Warehouse;
 import uz.script.wincrm.warehouse.repository.WarehouseRepository;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
@@ -47,12 +55,17 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     private final ClientBalanceService clientBalanceService;
     private final SaleOrderHistoryService saleOrderHistoryService;
 
+    // --- chegirma uchun qo'shilgan bog'liqliklar ---
+    private final DiscountCalculator discountCalculator;
+    private final SaleOrderDiscountHistoryRecorder discountHistoryRecorder;
+    private final SaleOrderDiscountHistoryRepository discountHistoryRepository;
+    private final SaleOrderDiscountHistoryMapper discountHistoryMapper;
+
     @Override
     @Auditable(
             action = AuditAction.CREATE,
             entity = "SaleOrder"
     )
-//    @CacheEvict(value = "saleOrders", allEntries = true)
     public SaleOrderResponse create(SaleOrderDTO dto) {
         log.info("Create sale order");
 
@@ -66,16 +79,23 @@ public class SaleOrderServiceImpl implements SaleOrderService {
         }
 
         User currentUser = userRepository.findById(dto.getUserId())
-                .orElseThrow(()-> new ResourceNotFoundException("User not found with id: " + dto
-                        .getUserId()));
+                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + dto.getUserId()));
 
         SaleOrder entity = mapper.toEntity(dto);
         entity.setClient(client);
-        entity.setTotalSum(dto.getTotalSum());
         entity.setWarehouse(warehouse);
         entity.setUser(currentUser);
         entity.setStatus(Status.ACTIVE);
         entity.setSalesOrderStatus(SalesOrderStatus.NEW);
+
+        // Kelgan summa - ASL summa (itemlardan yig'ilganmi yoki to'g'ridan-to'g'ri - farqi yo'q)
+        BigDecimal original = dto.getTotalSum();
+        entity.setOriginalTotalSum(original);
+
+        // Boshlang'ich holatda chegirma yo'q. Agar create paytida chegirma kelsa, quyida qo'llanadi.
+        entity.setDiscountAmount(BigDecimal.ZERO);
+        entity.setTotalSum(original);
+        entity.setDebtSum(original.subtract(paidOrZero(entity)));
 
         entity = repository.save(entity);
 
@@ -87,6 +107,12 @@ public class SaleOrderServiceImpl implements SaleOrderService {
                         .build()
         );
 
+        // Create paytida ixtiyoriy chegirma (dto.discountType != null bo'lsa) - shu yerda bir marta qo'llanadi
+        if (dto.getDiscountType() != null && dto.getDiscountValue() != null) {
+            applyDiscountInternal(entity, dto.getDiscountType(), dto.getDiscountValue());
+            entity = repository.save(entity);
+        }
+
         // ... mavjud sale order item yaratish, stock/stockHistory yangilash ...
 
         if (entity.getClient() != null) {
@@ -97,7 +123,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     }
 
     @Override
-//    @Cacheable(value = "saleOrder", key = "#id")
     public SaleOrderResponse findById(Long id) {
         log.info("Fetch sale order by id {}", id);
 
@@ -108,7 +133,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
     }
 
     @Override
-//    @Cacheable(value = "saleOrders")
     public Page<SaleOrderResponse> fetchAll(Pageable pageable) {
         log.info("Fetch all sale orders");
 
@@ -155,7 +179,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
             action = AuditAction.UPDATE,
             entity = "SaleOrder"
     )
-//    @CacheEvict(value = {"saleOrders", "saleOrder"}, allEntries = true)
     public SaleOrderResponse update(Long id, SaleOrderDTO dto) {
         log.info("Update sale order with id {}", id);
 
@@ -176,6 +199,18 @@ public class SaleOrderServiceImpl implements SaleOrderService {
 
         mapper.updateEntity(entity, dto);
 
+        // Agar update'da totalSum o'zgargan bo'lsa - u yangi ASL summa bo'ladi.
+        // Mavjud chegirmani yangi asl summaga qayta qo'llaymiz, aks holda totalSum noto'g'ri qoladi.
+        if (dto.getTotalSum() != null) {
+            entity.setOriginalTotalSum(dto.getTotalSum());
+            if (entity.getDiscountType() != null && entity.getDiscountValue() != null) {
+                applyDiscountInternal(entity, entity.getDiscountType(), entity.getDiscountValue());
+            } else {
+                entity.setTotalSum(dto.getTotalSum());
+                entity.setDebtSum(dto.getTotalSum().subtract(paidOrZero(entity)));
+            }
+        }
+
         entity = repository.save(entity);
 
         return mapper.toResponse(entity);
@@ -186,7 +221,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
             action = AuditAction.DELETE,
             entity = "SaleOrder"
     )
-//    @CacheEvict(value = {"saleOrders", "saleOrder"}, allEntries = true)
     public void delete(Long id) {
         log.info("Delete sale order with id {}", id);
 
@@ -209,10 +243,6 @@ public class SaleOrderServiceImpl implements SaleOrderService {
 
         SalesOrderStatus currentStatus = entity.getSalesOrderStatus();
 
-        // DIQQAT: avval bu yerda faqat "COMPLETED bo'lsa taqiqla" tekshiruvi bor edi,
-        // SalesOrderStatus.canTransitionTo() orqali belgilangan to'liq o'tish jadvali
-        // (masalan NEW dan to'g'ridan-to'g'ri DELIVERED'ga sakrash) ishlatilmasdi.
-        // Endi shu metoddan foydalanamiz - bu xatolikni ham tuzatadi.
         if (!currentStatus.canTransitionTo(salesOrderStatus)) {
             throw new BadRequestException(
                     "Cannot change order status from " + currentStatus + " to " + salesOrderStatus);
@@ -230,10 +260,84 @@ public class SaleOrderServiceImpl implements SaleOrderService {
         );
     }
 
+    @Override
+    @Auditable(
+            action = AuditAction.UPDATE,
+            entity = "SaleOrder"
+    )
+    public SaleOrderResponse applyDiscount(Long id, ApplyDiscountDTO dto) {
+        log.info("Apply discount to sale order {}", id);
+
+        SaleOrder entity = repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + id));
+
+        if (entity.getSalesOrderStatus().isFinal()) {
+            throw new BadRequestException(
+                    "Yakuniy holatdagi (" + entity.getSalesOrderStatus() + ") buyurtmaga chegirma qo'llab bo'lmaydi");
+        }
+
+        applyDiscountInternal(entity, dto.getDiscountType(), dto.getDiscountValue());
+
+        entity = repository.save(entity);
+
+        if (entity.getClient() != null) {
+            clientBalanceService.recalculateClientBalance(entity.getClient().getId());
+        }
+
+        return mapper.toResponse(entity);
+    }
+
+    @Override
+    public List<SaleOrderDiscountHistoryResponse> fetchDiscountHistory(Long id) {
+        log.info("Fetch discount history for sale order {}", id);
+
+        // buyurtma mavjudligini tekshirish
+        repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Sale order not found with id: " + id));
+
+        return discountHistoryRepository.findBySaleOrderIdOrderByCreatedAtAsc(id)
+                .stream()
+                .map(discountHistoryMapper::toResponse)
+                .toList();
+    }
+
     /**
-     * Joriy autentifikatsiyadan o'tgan foydalanuvchini (User entity) qaytaradi.
-     * SecurityContext'dagi authentication.getName() odatda username bo'ladi.
+     * Chegirmani entity'ga hisoblab yozadigan yagona ichki metod. FAQAT totalSum'ga ta'sir qiladi:
+     * totalSum = originalTotalSum - discountAmount. SaleOrderItem hisob-kitobi aralashmaydi.
+     * Hisoblangandan keyin chegirma tarixiga (REQUIRES_NEW) yozuv tushadi.
      */
+    private void applyDiscountInternal(SaleOrder entity,
+                                       uz.script.wincrm.sale.enums.DiscountType type,
+                                       BigDecimal value) {
+        BigDecimal previousDiscount =
+                entity.getDiscountAmount() != null ? entity.getDiscountAmount() : BigDecimal.ZERO;
+
+        BigDecimal base = entity.getOriginalTotalSum();
+        BigDecimal discountAmount = discountCalculator.calculate(base, type, value);
+
+        entity.setDiscountType(type);
+        entity.setDiscountValue(value);
+        entity.setDiscountAmount(discountAmount);
+        entity.setTotalSum(base.subtract(discountAmount));
+        entity.setDebtSum(entity.getTotalSum().subtract(paidOrZero(entity)));
+
+        discountHistoryRecorder.record(
+                SaleOrderDiscountHistoryDTO.builder()
+                        .saleOrderId(entity.getId())
+                        .discountType(type)
+                        .discountValue(value)
+                        .discountAmount(discountAmount)
+                        .previousDiscountAmount(previousDiscount)
+                        .originalTotalSum(base)
+                        .totalSumAfter(entity.getTotalSum())
+                        .build()
+        );
+    }
+
+    private BigDecimal paidOrZero(SaleOrder entity) {
+        return entity.getPaidSum() != null ? entity.getPaidSum() : BigDecimal.ZERO;
+    }
+
     private User getCurrentUser() {
         String username = Objects.requireNonNull(SecurityContextHolder.getContext().getAuthentication()).getName();
 

@@ -8,6 +8,7 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import uz.script.wincrm.sale.enums.DiscountType;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
@@ -51,9 +52,19 @@ public class SaleOrderDTO {
     )
     private LocalDateTime plannedDeliveryDate;
 
-    @Schema(description = "Total sum of the sale order")
-    @NotNull(message = "Order date is required")
+    @Schema(description = "Chegirmagacha bo'lgan asl summa (kelgan qiymat)")
+    @NotNull(message = "Total sum is required")
     private BigDecimal totalSum;
+
+    /**
+     * Create paytida ixtiyoriy boshlang'ich chegirma. Kelsa, buyurtma yaratilgach bir marta
+     * qo'llanadi. Kelmasa buyurtma chegirmasiz yaratiladi (keyin applyDiscount orqali qo'shsa bo'ladi).
+     */
+    @Schema(description = "Boshlang'ich chegirma turi (ixtiyoriy)", example = "PERCENTAGE")
+    private DiscountType discountType;
+
+    @Schema(description = "Boshlang'ich chegirma qiymati (ixtiyoriy)", example = "10")
+    private BigDecimal discountValue;
 
     @AssertTrue(message = "Planned ready date orderDate'dan oldin bo'lishi mumkin emas")
     @Schema(hidden = true)
@@ -71,5 +82,14 @@ public class SaleOrderDTO {
             return true;
         }
         return !plannedDeliveryDate.isBefore(plannedReadyDate);
+    }
+
+    /**
+     * Chegirma turi berilgan bo'lsa, qiymati ham berilishi shart (va aksincha).
+     */
+    @AssertTrue(message = "Chegirma turi va qiymati birga berilishi kerak")
+    @Schema(hidden = true)
+    public boolean isDiscountPairValid() {
+        return (discountType == null) == (discountValue == null);
     }
 }

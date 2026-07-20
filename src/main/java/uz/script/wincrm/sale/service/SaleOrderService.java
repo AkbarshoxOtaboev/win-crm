@@ -2,8 +2,10 @@ package uz.script.wincrm.sale.service;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import uz.script.wincrm.sale.dto.ApplyDiscountDTO;
 import uz.script.wincrm.sale.dto.SaleOrderDTO;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
+import uz.script.wincrm.sale.response.SaleOrderDiscountHistoryResponse;
 import uz.script.wincrm.sale.response.SaleOrderResponse;
 
 import java.time.LocalDateTime;
@@ -30,4 +32,16 @@ public interface SaleOrderService {
     void delete(Long id);
 
     void changeStatus(Long id, SalesOrderStatus salesOrderStatus);
+
+    /**
+     * Buyurtmaga chegirma qo'llaydi. Faqat totalSum'ga ta'sir qiladi:
+     * totalSum = originalTotalSum - discountAmount. Yakuniy holatda buyurtma
+     * COMPLETED yoki CANCELLED bo'lmagan bo'lishi kerak.
+     */
+    SaleOrderResponse applyDiscount(Long id, ApplyDiscountDTO dto);
+
+    /**
+     * Buyurtmaga qo'llangan chegirmalar tarixini xronologik qaytaradi.
+     */
+    List<SaleOrderDiscountHistoryResponse> fetchDiscountHistory(Long id);
 }

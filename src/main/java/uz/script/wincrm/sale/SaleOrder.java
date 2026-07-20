@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.clients.Client;
 import uz.script.wincrm.payment.Payment;
+import uz.script.wincrm.sale.enums.DiscountType;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
 import uz.script.wincrm.users.User;
 import uz.script.wincrm.utils.BaseEntity;
@@ -60,6 +61,44 @@ public class SaleOrder extends BaseEntity {
      */
     private LocalDateTime plannedDeliveryDate;
 
+    /**
+     * Chegirmagacha bo'lgan ASL buyurtma summasi. Frontend qanday hisoblab yuborgan bo'lsa
+     * (itemlardan yig'ib yoki to'g'ridan-to'g'ri), o'sha qiymat shu maydonga tushadi.
+     *
+     * DIQQAT: bu maydon chegirma hisoblash uchun O'ZGARMAS tayanch nuqta bo'lib xizmat qiladi.
+     * Chegirma bir necha marta qayta qo'llansa ham, har safar totalSum shu asl qiymatdan
+     * qayta hisoblanadi - shu tufayli chegirma ustma-ust tushib totalSum noto'g'ri
+     * kamayib ketmaydi.
+     */
+    @Column(nullable = false)
+    private BigDecimal originalTotalSum;
+
+    /**
+     * Qo'llangan chegirma turi (foizli yoki aniq summa). Chegirma yo'q bo'lsa null.
+     */
+    @Enumerated(EnumType.STRING)
+    private DiscountType discountType;
+
+    /**
+     * Foydalanuvchi kiritgan XOM chegirma qiymati:
+     * - PERCENTAGE bo'lsa: foiz (masalan 10)
+     * - FIXED_AMOUNT bo'lsa: summa (masalan 50000)
+     */
+    private BigDecimal discountValue;
+
+    /**
+     * Hisoblangan ANIQ chegirma summasi (pul birligida). originalTotalSum'dan
+     * discountType/discountValue asosida bir marta hisoblanib SHU YERGA YOZILADI.
+     * Keyin qayta hisoblanmaydi - buyurtmaga qachon qanday chegirma berilgani aynan
+     * shu qiymatda saqlanib qoladi.
+     */
+    private BigDecimal discountAmount;
+
+    /**
+     * Mijozga to'lash uchun qoladigan YAKUNIY summa (chegirma qo'llangandan keyin).
+     * Formula: totalSum = originalTotalSum - discountAmount.
+     * SaleOrderItem hisob-kitobi bu formulaga ARALASHMAYDI.
+     */
     @Column(nullable = false)
     private BigDecimal totalSum;
 

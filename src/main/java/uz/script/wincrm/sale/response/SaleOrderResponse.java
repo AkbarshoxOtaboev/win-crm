@@ -4,6 +4,7 @@ import io.swagger.v3.oas.annotations.media.Schema;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import uz.script.wincrm.sale.enums.DiscountType;
 import uz.script.wincrm.sale.enums.SalesOrderStatus;
 import uz.script.wincrm.utils.Status;
 
@@ -49,13 +50,25 @@ public class SaleOrderResponse {
     @Schema(description = "Mijozga yetkazilishi rejalashtirilgan sana", example = "2026-07-18T00:00:00")
     private LocalDateTime plannedDeliveryDate;
 
-    @Schema(description = "Total sum of the sale order", example = "5000.00")
+    @Schema(description = "Chegirmagacha bo'lgan asl summa", example = "5000.00")
+    private BigDecimal originalTotalSum;
+
+    @Schema(description = "Qo'llangan chegirma turi", example = "PERCENTAGE")
+    private DiscountType discountType;
+
+    @Schema(description = "Kiritilgan chegirma qiymati (foiz yoki summa)", example = "10")
+    private BigDecimal discountValue;
+
+    @Schema(description = "Hisoblangan aniq chegirma summasi", example = "500.00")
+    private BigDecimal discountAmount;
+
+    @Schema(description = "Chegirma qo'llangandan keyingi yakuniy summa", example = "4500.00")
     private BigDecimal totalSum;
 
     @Schema(description = "Paid sum of the sale order", example = "3000.00")
     private BigDecimal paidSum;
 
-    @Schema(description = "Remaining debt sum of the sale order", example = "2000.00")
+    @Schema(description = "Remaining debt sum of the sale order", example = "1500.00")
     private BigDecimal debtSum;
 
     @Schema(description = "Current sale order status", example = "ACTIVE")

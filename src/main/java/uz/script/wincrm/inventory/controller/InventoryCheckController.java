@@ -91,10 +91,10 @@ public class InventoryCheckController {
     }
 
     @PostMapping("/start")
-    @PreAuthorize("hasAuthority('INVENTORY_START')")
+    @PreAuthorize("hasAuthority('INVENTORY_CREATE')")
     @Operation(
             summary = "Start a new inventory check",
-            description = "Only users with INVENTORY_START permission can use this endpoint. " +
+            description = "Only users with INVENTORY_CREATE permission can use this endpoint. " +
                     "Tanlangan ombordagi joriy Stock qoldiqlarini muzlatib, yangi inventarizatsiya boshlaydi."
     )
     @ApiResponse(
@@ -133,10 +133,10 @@ public class InventoryCheckController {
     }
 
     @PostMapping("/{id}/confirm")
-    @PreAuthorize("hasAuthority('INVENTORY_CONFIRM')")
+    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
     @Operation(
             summary = "Confirm an inventory check",
-            description = "Only users with INVENTORY_CONFIRM permission can use this endpoint. " +
+            description = "Only users with INVENTORY_UPDATE permission can use this endpoint. " +
                     "Farqlarni Stockka qo'llaydi va StockHistory yozadi."
     )
     @ApiResponse(
@@ -153,10 +153,10 @@ public class InventoryCheckController {
     }
 
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAuthority('INVENTORY_CANCEL')")
+    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
     @Operation(
             summary = "Cancel an inventory check",
-            description = "Only users with INVENTORY_CANCEL permission can use this endpoint."
+            description = "Only users with INVENTORY_UPDATE permission can use this endpoint."
     )
     @ApiResponse(
             responseCode = "200",

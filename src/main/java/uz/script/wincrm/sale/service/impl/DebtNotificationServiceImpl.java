@@ -7,6 +7,9 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import uz.script.wincrm.clients.Client;
+import uz.script.wincrm.clients.repository.ClientRepository;
+import uz.script.wincrm.clients.response.ClientBalanceResponse;
+import uz.script.wincrm.clients.service.ClientBalanceService;
 import uz.script.wincrm.exceptions.BadRequestException;
 import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.sale.enums.DebtNotificationStatus;
@@ -38,6 +41,8 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
     private final DebtNotificationHistoryRepository historyRepository;
     private final DebtNotificationHistoryMapper historyMapper;
     private final DebtNotificationHistoryRecorder historyRecorder;
+    private final ClientRepository clientRepository;
+    private final ClientBalanceService clientBalanceService;
 
     @Override
     public List<DebtorClientResponse> fetchDebtorClients(LocalDate startDate, LocalDate endDate, Long userId) {
@@ -65,14 +70,16 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
     public void sendDebtNotificationToClient(Long clientId) {
         log.info("Send debt SMS to client id {}", clientId);
 
-        List<SaleOrder> orders = saleOrderRepository.findByClient_IdAndDebtSumGreaterThan(clientId, BigDecimal.ZERO);
+        Client client = clientRepository.findById(clientId)
+                .orElseThrow(() -> new BadRequestException("Mijoz topilmadi: id=" + clientId));
 
-        if (orders.isEmpty()) {
+        BigDecimal totalDebt = resolveClientTotalDebt(clientId);
+
+        if (totalDebt.compareTo(BigDecimal.ZERO) <= 0) {
             throw new BadRequestException("Ushbu mijozda qarz mavjud emas");
         }
 
-        Client client = orders.get(0).getClient();
-        sendToClient(client, orders);
+        sendToClient(client, totalDebt);
     }
 
     @Override
@@ -104,7 +111,14 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
             throw new BadRequestException("Ushbu buyurtmada qarz mavjud emas");
         }
 
-        sendToClient(order.getClient(), List.of(order));
+        Client client = order.getClient();
+        BigDecimal totalDebt = resolveClientTotalDebt(client.getId());
+
+        if (totalDebt.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new BadRequestException("Ushbu mijozda qarz mavjud emas");
+        }
+
+        sendToClient(client, totalDebt);
     }
 
     @Override
@@ -123,14 +137,10 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
                 .map(historyMapper::toResponse);
     }
 
-    private void sendToClient(Client client, List<SaleOrder> orders) {
+    private void sendToClient(Client client, BigDecimal totalDebt) {
         if (client.getPhone() == null || client.getPhone().isBlank()) {
             throw new BadRequestException("Mijoz '" + client.getFullName() + "' uchun telefon raqami mavjud emas");
         }
-
-        BigDecimal totalDebt = orders.stream()
-                .map(SaleOrder::getDebtSum)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
 
         String message = buildClientMessage(client, totalDebt);
 //        String message = deafultTemplate();
@@ -148,18 +158,36 @@ public class DebtNotificationServiceImpl implements DebtNotificationService {
     }
 
     private String buildClientMessage(Client client, BigDecimal totalDebt) {
-//        return "Hurmatli " + client.getFullName() + ", sizning qarzingiz: " + totalDebt
-//                + " so'm. Iltimos, to'lovni imkon qadar tezroq amalga oshiring.";
-//        return "Hurmatli" + client.getFullName()+ "! ABADSTEKLO korxonasidagi qarzingiz "+totalDebt+" soʻmni tashkil etadi." +
-//                " Iltimos, toʻlovni oʻz vaqtida amalga oshiring. Rahmat!";
         return "Hurmatli "+client.getFullName()+"! ABADSTEKLO korxonasidagi qarzingiz "+totalDebt.stripTrailingZeros().toPlainString()+" soʻmni tashkil etadi. Iltimos, toʻlovni oʻz vaqtida amalga oshiring. Rahmat!";
+    }
 
+    /**
+     * Mijozning UMUMIY (barcha vaqt, davrga bog'liq bo'lmagan) qarzini
+     * ClientBalance jadvalidan oladi — bu shu qarz uchun yagona ishonchli
+     * manba (single source of truth). SaleOrder'lar bo'yicha qayta yig'ib
+     * hisoblanmaydi, chunki ClientBalance allaqachon
+     * SaleOrderServiceImpl.create() / PaymentServiceImpl.create() orqali
+     * har bir buyurtma/to'lovda sinxronlanib boriladi. Aynan shu summa
+     * SMS matnida ham, admin panelda ham ko'rsatiladi — ikkalasi bir xil
+     * bo'lishi kerak.
+     */
+    private BigDecimal resolveClientTotalDebt(Long clientId) {
+        try {
+            ClientBalanceResponse balance = clientBalanceService.findAllTimeByClientId(clientId);
+            return balance != null && balance.getTotalDebt() != null
+                    ? balance.getTotalDebt()
+                    : BigDecimal.ZERO;
+        } catch (Exception e) {
+            log.warn("Mijoz id={} uchun ClientBalance topilmadi, qarz 0 deb olinadi: {}", clientId, e.getMessage());
+            return BigDecimal.ZERO;
+        }
     }
 
     private DebtorClientResponse toDebtorClientResponse(Client client, List<SaleOrder> orders) {
-        BigDecimal totalDebt = orders.stream()
-                .map(SaleOrder::getDebtSum)
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        // Diqqat: totalDebt endi filtrlangan buyurtmalar yig'indisidan emas,
+        // ClientBalance'dan olinadi — shunda admin panelda ko'rinadigan summa
+        // va SMS orqali mijozga yuboriladigan summa har doim bir xil bo'ladi.
+        BigDecimal totalDebt = resolveClientTotalDebt(client.getId());
 
         List<DebtorClientResponse.DebtOrderInfo> orderInfos = orders.stream()
                 .map(order -> DebtorClientResponse.DebtOrderInfo.builder()

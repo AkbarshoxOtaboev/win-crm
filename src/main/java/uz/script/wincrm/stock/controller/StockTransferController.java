@@ -27,10 +27,10 @@ public class StockTransferController {
     private final StockTransferService service;
 
     @PostMapping
-    @PreAuthorize("hasAuthority('STOCK_TRANSFER')")
+    @PreAuthorize("hasAuthority('STOCK_EDIT')")
     @Operation(
             summary = "Ombordan omborga mahsulot ko'chirish",
-            description = "Only users with STOCK_TRANSFER permission can use this endpoint."
+            description = "Only users with STOCK_EDIT permission can use this endpoint."
     )
     @ApiResponse(
             responseCode = "200",

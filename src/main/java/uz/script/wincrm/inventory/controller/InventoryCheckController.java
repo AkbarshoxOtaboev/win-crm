@@ -111,7 +111,7 @@ public class InventoryCheckController {
     }
 
     @PutMapping("/{inventoryCheckId}/items/{itemId}")
-    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
+    @PreAuthorize("hasAuthority('INVENTORY_EDIT')")
     @Operation(
             summary = "Update actual count for an inventory check item",
             description = "Only users with INVENTORY_UPDATE permission can use this endpoint."
@@ -133,7 +133,7 @@ public class InventoryCheckController {
     }
 
     @PostMapping("/{id}/confirm")
-    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
+    @PreAuthorize("hasAuthority('INVENTORY_EDIT')")
     @Operation(
             summary = "Confirm an inventory check",
             description = "Only users with INVENTORY_UPDATE permission can use this endpoint. " +
@@ -153,7 +153,7 @@ public class InventoryCheckController {
     }
 
     @PostMapping("/{id}/cancel")
-    @PreAuthorize("hasAuthority('INVENTORY_UPDATE')")
+    @PreAuthorize("hasAuthority('INVENTORY_EDIT')")
     @Operation(
             summary = "Cancel an inventory check",
             description = "Only users with INVENTORY_UPDATE permission can use this endpoint."

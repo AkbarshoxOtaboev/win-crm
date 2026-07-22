@@ -55,4 +55,25 @@ public interface PaymentRepository extends JpaRepository<Payment, Long> {
      */
     @Query("SELECT COALESCE(SUM(p.paymentAmount), 0) FROM Payment p WHERE p.user.id = :userId")
     BigDecimal sumPaymentAmountByUserId(@Param("userId") Long userId);
+
+    // ---------------------------------------------------------------
+    // Telegram bot uchun — lazy proxy'siz, yengil proyeksiyalar
+    // LEFT JOIN ishlatilgan — paymentType yoki saleOrder null bo'lsa ham
+    // yozuv natijadan tushib qolmasligi uchun (ichki JOIN bo'lganda tushib qolardi).
+    // ---------------------------------------------------------------
+
+    @Query("SELECT new uz.script.wincrm.telegram.view.PaymentView(" +
+            "p.id, p.paymentDate, p.paymentAmount, pt.name, so.id, p.comment) " +
+            "FROM Payment p " +
+            "LEFT JOIN p.paymentType pt " +
+            "LEFT JOIN p.saleOrder so " +
+            "WHERE p.client.id = :clientId " +
+            "ORDER BY p.paymentDate DESC")
+    List<uz.script.wincrm.telegram.view.PaymentView> findPaymentViewsByClientId(@Param("clientId") Long clientId);
+
+    @Query("SELECT new uz.script.wincrm.telegram.view.PaymentView(" +
+            "p.id, p.paymentDate, p.paymentAmount, pt.name, p.saleOrder.id, p.comment) " +
+            "FROM Payment p LEFT JOIN p.paymentType pt " +
+            "WHERE p.saleOrder.id = :saleOrderId ORDER BY p.paymentDate ASC")
+    List<uz.script.wincrm.telegram.view.PaymentView> findPaymentViewsBySaleOrderId(@Param("saleOrderId") Long saleOrderId);
 }

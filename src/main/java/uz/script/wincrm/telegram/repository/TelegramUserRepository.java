@@ -16,4 +16,7 @@ public interface TelegramUserRepository extends JpaRepository<TelegramUser, Long
     Optional<TelegramUser> findByPhone(String phone);
 
     boolean existsByPhone(String phone);
+
+    /** Admin panelidan tanlangan mijozga xabar yuborishda uning chatId'sini topish uchun. */
+    Optional<TelegramUser> findByClient_Id(Long clientId);
 }

@@ -10,14 +10,15 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import uz.script.wincrm.clients.Client;
 import uz.script.wincrm.clients.repository.ClientRepository;
-import uz.script.wincrm.payment.Payment;
-import uz.script.wincrm.sale.SaleOrder;
 import uz.script.wincrm.telegram.TelegramUser;
 import uz.script.wincrm.telegram.TelegramUserRole;
 import uz.script.wincrm.telegram.keyboard.TelegramKeyboards;
 import uz.script.wincrm.telegram.repository.TelegramUserRepository;
+import uz.script.wincrm.telegram.service.TelegramBotDataService;
 import uz.script.wincrm.telegram.session.BotConversationState;
 import uz.script.wincrm.telegram.session.BotSessionService;
+import uz.script.wincrm.telegram.view.PaymentView;
+import uz.script.wincrm.telegram.view.SaleOrderView;
 import uz.script.wincrm.utils.Status;
 
 import java.math.BigDecimal;
@@ -28,15 +29,18 @@ import java.util.Optional;
 /**
  * WinCRM Telegram bot.
  * <p>
- * MUHIM: bu klass ataylab {@code @Component} EMAS. Agar Spring uni avtomatik
- * bean sifatida yaratsa, konstruktor ilova ko'tarilishi paytida token
- * so'raydi va agar admin hali token kiritmagan bo'lsa butun ilova
- * ishga tushmay qoladi. Shu sababli bu obyekt faqat
- * {@link uz.script.wincrm.telegram.config.TelegramBotLifecycleService}
- * tomonidan, token bazada mavjud bo'lgandagina, qo'lda ({@code new}) yaratiladi.
+ * MUHIM: bu klass ataylab {@code @Component} EMAS — {@link
+ * uz.script.wincrm.telegram.config.TelegramBotLifecycleService} tomonidan
+ * token bazada mavjud bo'lgandagina qo'lda ({@code new}) yaratiladi.
  * <p>
- * Funksiyalar: ro'yxatdan o'tish (telefon raqami orqali), buyurtmalar,
- * to'lovlar, umumiy qarz va buyurtma bo'yicha akt sverka.
+ * MUHIM #2: barcha buyurtma/to'lov/balans ma'lumotlari {@link TelegramBotDataService}
+ * orqali (JPQL constructor-expression proyeksiyalar) olinadi — bu klass hech qachon
+ * Client/SaleOrder/Payment entity'larining lazy relation'larini bevosita navigatsiya
+ * qilmaydi, chunki bot Spring bean emas va @Transactional context'da ishlamaydi.
+ * <p>
+ * Funksiyalar: ro'yxatdan o'tish (telefon raqami orqali, shu jumladan asosiy
+ * bazada mavjud mijozlarni avtomatik bog'lash), buyurtmalar, to'lovlar, umumiy
+ * qarz, akt sverka va admin panelidan tanlangan mijozga xabar yuborish.
  */
 @Slf4j
 public class CrmTelegramBot extends TelegramLongPollingBot {
@@ -48,6 +52,7 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
     private final ClientRepository clientRepository;
     private final TelegramKeyboards keyboards;
     private final BotSessionService sessionService;
+    private final TelegramBotDataService botDataService;
 
     public CrmTelegramBot(
             String token,
@@ -55,7 +60,8 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
             TelegramUserRepository telegramUserRepository,
             ClientRepository clientRepository,
             TelegramKeyboards keyboards,
-            BotSessionService sessionService
+            BotSessionService sessionService,
+            TelegramBotDataService botDataService
     ) {
         super(token);
         this.botUsername = botUsername;
@@ -63,6 +69,7 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
         this.clientRepository = clientRepository;
         this.keyboards = keyboards;
         this.sessionService = sessionService;
+        this.botDataService = botDataService;
     }
 
     @Override
@@ -145,13 +152,11 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
         user.setLastName(contact.getLastName());
         user.setTelegramUsername(contact.getUserId() != null ? String.valueOf(contact.getUserId()) : null);
 
-        // Client bazasida shu telefon raqami bo'yicha mos yozuvni topib bog'laymiz.
-        // NOTE: ClientRepository'ga findByPhone(String) qo'shilgach shu metoddan foydalaning
-        // (hozircha faqat existsByPhone bor edi) — QOLLANMA.md'dagi 6-bo'limga qarang.
-        clientRepository.findAll().stream()
-                .filter(c -> phone.equals(normalizePhone(c.getPhone())))
-                .findFirst()
-                .ifPresent(user::setClient);
+        // Asosiy bazadagi (Clients jadvalidagi) mavjud mijozlar botdan ro'yxatdan
+        // o'tganda avtomatik bog'lanadi — indekslangan findByPhone orqali
+        // (avvalgi versiyada findAll().stream().filter(...) bilan BUTUN jadval
+        // yuklanardi, bu N+1/performance muammosi edi — endi tuzatildi).
+        clientRepository.findByPhone(phone).ifPresent(user::setClient);
 
         telegramUserRepository.save(user);
         sessionService.setState(chatId, BotConversationState.MAIN_MENU);
@@ -184,19 +189,25 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
 
     private void sendOrders(TelegramUser user) {
         Client client = user.getClient();
-        if (client == null || client.getSaleOrders() == null || client.getSaleOrders().isEmpty()) {
+        if (client == null) {
+            sendPlain(user.getChatId(), "CRM tizimida mijoz topilmadi.");
+            return;
+        }
+
+        List<SaleOrderView> orders = botDataService.findOrdersByClientId(client.getId());
+        if (orders.isEmpty()) {
             sendPlain(user.getChatId(), "Sizda hozircha buyurtmalar mavjud emas.");
             return;
         }
 
         StringBuilder sb = new StringBuilder("\uD83D\uDCE6 Sizning buyurtmalaringiz:\n\n");
-        client.getSaleOrders().forEach(order ->
-                sb.append("\u2022 №").append(order.getId())
-                        .append(" | ").append(order.getOrderDate() != null ? order.getOrderDate().format(DATE_FORMAT) : "-")
-                        .append(" | Jami: ").append(formatSum(order.getTotalSum()))
-                        .append(" | To'langan: ").append(formatSum(order.getPaidSum()))
-                        .append(" | Qarz: ").append(formatSum(order.getDebtSum()))
-                        .append(" | Holat: ").append(order.getSalesOrderStatus())
+        orders.forEach(order ->
+                sb.append("\u2022 №").append(order.id())
+                        .append(" | ").append(order.orderDate() != null ? order.orderDate().format(DATE_FORMAT) : "-")
+                        .append(" | Jami: ").append(formatSum(order.totalSum()))
+                        .append(" | To'langan: ").append(formatSum(order.paidSum()))
+                        .append(" | Qarz: ").append(formatSum(order.debtSum()))
+                        .append(" | Holat: ").append(order.salesOrderStatus())
                         .append("\n")
         );
 
@@ -205,26 +216,27 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
 
     private void sendPayments(TelegramUser user) {
         Client client = user.getClient();
-        if (client == null || client.getPayments() == null || client.getPayments().isEmpty()) {
+        if (client == null) {
+            sendPlain(user.getChatId(), "CRM tizimida mijoz topilmadi.");
+            return;
+        }
+
+        List<PaymentView> payments = botDataService.findPaymentsByClientId(client.getId());
+        if (payments.isEmpty()) {
             sendPlain(user.getChatId(), "Sizda hozircha to'lovlar mavjud emas.");
             return;
         }
 
         StringBuilder sb = new StringBuilder("\uD83D\uDCB3 Sizning to'lovlaringiz:\n\n");
-        client.getPayments().stream()
-                .sorted((p1, p2) -> {
-                    if (p1.getPaymentDate() == null || p2.getPaymentDate() == null) return 0;
-                    return p2.getPaymentDate().compareTo(p1.getPaymentDate());
-                })
-                .forEach(payment -> {
-                    String orderInfo = payment.getSaleOrder() != null
-                            ? " (Buyurtma №" + payment.getSaleOrder().getId() + ")"
-                            : "";
-                    sb.append("\u2022 ").append(payment.getPaymentDate() != null ? payment.getPaymentDate().format(DATE_FORMAT) : "-")
-                            .append(" | ").append(formatSum(payment.getPaymentAmount()))
-                            .append(orderInfo)
-                            .append("\n");
-                });
+        payments.forEach(payment -> {
+            String orderInfo = payment.saleOrderId() != null
+                    ? " (Buyurtma №" + payment.saleOrderId() + ")"
+                    : "";
+            sb.append("\u2022 ").append(payment.paymentDate() != null ? payment.paymentDate().format(DATE_FORMAT) : "-")
+                    .append(" | ").append(formatSum(payment.paymentAmount()))
+                    .append(orderInfo)
+                    .append("\n");
+        });
 
         sendPlain(user.getChatId(), sb.toString());
     }
@@ -236,40 +248,33 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        List<SaleOrder> orders = client.getSaleOrders() == null ? List.of() : client.getSaleOrders();
-
-        // SaleOrder'da tayyor totalSum / paidSum / debtSum bor — shulardan foydalanamiz.
-        BigDecimal totalOrders = orders.stream()
-                .map(o -> nvl(o.getTotalSum()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalPaid = orders.stream()
-                .map(o -> nvl(o.getPaidSum()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        BigDecimal totalDebt = orders.stream()
-                .map(o -> nvl(o.getDebtSum()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
-
-        String text = "\uD83D\uDCB0 Umumiy hisobot:\n\n" +
-                "Jami buyurtmalar summasi: " + formatSum(totalOrders) + "\n" +
-                "Jami to'langan summa: " + formatSum(totalPaid) + "\n" +
-                "Umumiy qarzdorlik: " + formatSum(totalDebt);
+        String text = botDataService.findBalanceByClientId(client.getId())
+                .map(balance -> "\uD83D\uDCB0 Umumiy hisobot:\n\n" +
+                        "Jami xaridlar summasi: " + formatSum(balance.totalPurchase()) + "\n" +
+                        "Jami to'langan summa: " + formatSum(balance.totalPaid()) + "\n" +
+                        "Umumiy qarzdorlik: " + formatSum(balance.totalDebt()))
+                .orElse("\uD83D\uDCB0 Sizning balansingiz hali hisoblanmagan.");
 
         sendPlain(user.getChatId(), text);
     }
 
     private void sendAktOrderSelection(TelegramUser user) {
         Client client = user.getClient();
-        if (client == null || client.getSaleOrders() == null || client.getSaleOrders().isEmpty()) {
+        if (client == null) {
+            sendPlain(user.getChatId(), "CRM tizimida mijoz topilmadi.");
+            return;
+        }
+
+        List<SaleOrderView> orders = botDataService.findOrdersByClientId(client.getId());
+        if (orders.isEmpty()) {
             sendPlain(user.getChatId(), "Akt sverka olish uchun buyurtmalar mavjud emas.");
             return;
         }
 
-        List<TelegramKeyboards.OrderButton> buttons = client.getSaleOrders().stream()
+        List<TelegramKeyboards.OrderButton> buttons = orders.stream()
                 .map(o -> new TelegramKeyboards.OrderButton(
-                        o.getId(),
-                        "№" + o.getId() + " (" + (o.getOrderDate() != null ? o.getOrderDate().format(DATE_FORMAT) : "-") + ")"
+                        o.id(),
+                        "№" + o.id() + " (" + (o.orderDate() != null ? o.orderDate().format(DATE_FORMAT) : "-") + ")"
                 ))
                 .toList();
 
@@ -304,47 +309,63 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
             return;
         }
 
-        Client client = userOpt.get().getClient();
+        Long clientId = userOpt.get().getClient().getId();
 
-        SaleOrder order = client.getSaleOrders().stream()
-                .filter(o -> orderId.equals(o.getId()))
-                .findFirst()
-                .orElse(null);
-
-        if (order == null) {
+        Optional<SaleOrderView> orderOpt = botDataService.findOrderByIdAndClientId(orderId, clientId);
+        if (orderOpt.isEmpty()) {
             sendPlain(chatId, "Buyurtma topilmadi yoki sizga tegishli emas.");
             return;
         }
 
-        List<Payment> payments = order.getPayments();
-        if (payments == null || payments.isEmpty()) {
+        SaleOrderView order = orderOpt.get();
+        List<PaymentView> payments = botDataService.findPaymentsByOrderId(orderId);
+        if (payments.isEmpty()) {
             sendPlain(chatId, "Bu buyurtma bo'yicha to'lovlar topilmadi.");
             return;
         }
 
         StringBuilder sb = new StringBuilder("\uD83E\uDDFE Akt sverka — Buyurtma №" + orderId + "\n\n" +
-                "Buyurtma summasi: " + formatSum(order.getTotalSum()) + "\n\n" +
+                "Buyurtma summasi: " + formatSum(order.totalSum()) + "\n\n" +
                 "To'langan summalar ro'yxati:\n");
 
         BigDecimal total = BigDecimal.ZERO;
-        for (Payment payment : payments) {
-            sb.append("\u2022 ").append(payment.getPaymentDate() != null ? payment.getPaymentDate().format(DATE_FORMAT) : "-")
-                    .append(" | ").append(formatSum(payment.getPaymentAmount()));
-            if (payment.getPaymentType() != null) {
-                sb.append(" | ").append(payment.getPaymentType());
+        for (PaymentView payment : payments) {
+            sb.append("\u2022 ").append(payment.paymentDate() != null ? payment.paymentDate().format(DATE_FORMAT) : "-")
+                    .append(" | ").append(formatSum(payment.paymentAmount()));
+            if (payment.paymentTypeName() != null) {
+                sb.append(" | ").append(payment.paymentTypeName());
             }
-            if (payment.getComment() != null && !payment.getComment().isBlank()) {
-                sb.append(" | ").append(payment.getComment());
+            if (payment.comment() != null && !payment.comment().isBlank()) {
+                sb.append(" | ").append(payment.comment());
             }
             sb.append("\n");
-            total = total.add(nvl(payment.getPaymentAmount()));
+            total = total.add(nvl(payment.paymentAmount()));
         }
 
         sb.append("\nJami to'langan: ").append(formatSum(total))
-                .append("\nQoldiq qarz: ").append(formatSum(order.getDebtSum()));
+                .append("\nQoldiq qarz: ").append(formatSum(order.debtSum()));
 
         sendPlain(chatId, sb.toString());
         sessionService.setState(chatId, BotConversationState.MAIN_MENU);
+    }
+
+    // ---------------------------------------------------------------
+    // Tashqaridan (admin panel) tanlangan mijozga xabar yuborish
+    // ---------------------------------------------------------------
+
+    /**
+     * CRM admin panelidan tanlangan mijozga bot orqali erkin xabar yuborish uchun.
+     * {@link uz.script.wincrm.telegram.config.TelegramBotLifecycleService#sendMessageToClient}
+     * tomonidan chaqiriladi — chatId u yerda TelegramUser orqali oldindan aniqlanadi,
+     * bu metod faqat xabarni yuboradi.
+     *
+     * @return true — xabar muvaffaqiyatli yuborilgan bo'lsa, false — Telegram API xatoligi bo'lsa
+     */
+    public boolean sendMessageToClientChat(Long chatId, String text) {
+        return executeQuietly(SendMessage.builder()
+                .chatId(String.valueOf(chatId))
+                .text(text)
+                .build());
     }
 
     // ---------------------------------------------------------------
@@ -384,11 +405,13 @@ public class CrmTelegramBot extends TelegramLongPollingBot {
                 .build());
     }
 
-    private void executeQuietly(SendMessage message) {
+    private boolean executeQuietly(SendMessage message) {
         try {
             execute(message);
+            return true;
         } catch (TelegramApiException e) {
             log.error("Telegram xabar yuborishda xatolik", e);
+            return false;
         }
     }
 }

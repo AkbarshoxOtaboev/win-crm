@@ -118,4 +118,19 @@ public interface SaleOrderRepository extends JpaRepository<SaleOrder, Long> {
             @Param("now") LocalDateTime now,
             @Param("excludedStatuses") List<SalesOrderStatus> excludedStatuses
     );
+
+    // ---------------------------------------------------------------
+    // Telegram bot uchun — lazy proxy'siz, yengil proyeksiyalar
+    // ---------------------------------------------------------------
+
+    @Query("SELECT new uz.script.wincrm.telegram.view.SaleOrderView(" +
+            "so.id, so.orderDate, so.totalSum, so.paidSum, so.debtSum, so.salesOrderStatus) " +
+            "FROM SaleOrder so WHERE so.client.id = :clientId ORDER BY so.orderDate DESC")
+    List<uz.script.wincrm.telegram.view.SaleOrderView> findOrderViewsByClientId(@Param("clientId") Long clientId);
+
+    @Query("SELECT new uz.script.wincrm.telegram.view.SaleOrderView(" +
+            "so.id, so.orderDate, so.totalSum, so.paidSum, so.debtSum, so.salesOrderStatus) " +
+            "FROM SaleOrder so WHERE so.id = :id AND so.client.id = :clientId")
+    Optional<uz.script.wincrm.telegram.view.SaleOrderView> findOrderViewByIdAndClientId(
+            @Param("id") Long id, @Param("clientId") Long clientId);
 }

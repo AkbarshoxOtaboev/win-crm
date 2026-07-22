@@ -24,6 +24,12 @@ public class PaymentResponse {
     @Schema(description = "Client full name", example = "John Doe")
     private String clientFullName;
 
+    @Schema(description = "User (to'lovni qabul qilgan xodim) ID", example = "1")
+    private Long userId;
+
+    @Schema(description = "User (to'lovni qabul qilgan xodim) to'liq ismi", example = "Ali Valiyev")
+    private String userFullName;
+
     @Schema(description = "Sale order ID", example = "1")
     private Long saleOrderId;
 

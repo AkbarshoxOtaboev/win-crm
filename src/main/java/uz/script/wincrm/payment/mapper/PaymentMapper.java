@@ -39,6 +39,8 @@ public class PaymentMapper {
                 .id(entity.getId())
                 .clientId(entity.getClient() != null ? entity.getClient().getId() : null)
                 .clientFullName(entity.getClient() != null ? entity.getClient().getFullName() : null)
+                .userId(entity.getUser() != null ? entity.getUser().getId() : null)
+                .userFullName(entity.getUser() != null ? entity.getUser().getFullName() : null)
                 .saleOrderId(entity.getSaleOrder() != null ? entity.getSaleOrder().getId() : null)
                 .paymentTypeId(entity.getPaymentType() != null ? entity.getPaymentType().getId() : null)
                 .paymentTypeName(entity.getPaymentType() != null ? entity.getPaymentType().getName() : null)

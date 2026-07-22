@@ -8,7 +8,7 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
+import org.springdoc.core.annotations.ParameterObject;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.data.web.PageableDefault;
@@ -17,9 +17,12 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import uz.script.wincrm.payment.dto.PaymentDTO;
+import uz.script.wincrm.payment.response.PaymentPageResponse;
 import uz.script.wincrm.payment.response.PaymentResponse;
 import uz.script.wincrm.payment.service.PaymentService;
+import uz.script.wincrm.utils.PageUtils;
 import uz.script.wincrm.utils.RestApiResponse;
+import uz.script.wincrm.utils.response.PageResponse;
 
 @RestController
 @RequestMapping("/api/payments")
@@ -34,9 +37,10 @@ public class PaymentController {
     @Operation(
             summary = "Create payment",
             description = "Only users with PAYMENT_CREATE permission can use this endpoint. " +
-                    "clientId is required. saleOrderId is optional — omit it for a general/advance payment " +
-                    "not tied to a specific order. If saleOrderId is provided, the related sale order's " +
-                    "paidSum and debtSum are automatically recalculated."
+                    "clientId and userId are required. userId identifies the staff member who received/registered " +
+                    "the payment and is returned in the response as userId/userFullName. saleOrderId is optional — " +
+                    "omit it for a general/advance payment not tied to a specific order. If saleOrderId is provided, " +
+                    "the related sale order's paidSum and debtSum are automatically recalculated."
     )
     @ApiResponse(
             responseCode = "201",
@@ -67,17 +71,18 @@ public class PaymentController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = PaymentPageResponse.class)
             )
     )
-    public ResponseEntity<?> fetchAll(
+    public ResponseEntity<RestApiResponse<PageResponse<PaymentResponse>>> fetchAll(
+            @ParameterObject
             @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<PaymentResponse>>builder()
+                RestApiResponse.<PageResponse<PaymentResponse>>builder()
                         .message("All payments fetched successfully")
-                        .data(service.fetchAll(pageable))
+                        .data(PageUtils.from(service.fetchAll(pageable)))
                         .build()
         );
     }
@@ -117,19 +122,20 @@ public class PaymentController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = PaymentPageResponse.class)
             )
     )
-    public ResponseEntity<?> fetchByClientId(
+    public ResponseEntity<RestApiResponse<PageResponse<PaymentResponse>>> fetchByClientId(
             @Parameter(description = "Client ID", example = "1")
             @PathVariable Long clientId,
+            @ParameterObject
             @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<PaymentResponse>>builder()
+                RestApiResponse.<PageResponse<PaymentResponse>>builder()
                         .message("Payments for client fetched successfully")
-                        .data(service.fetchByClientId(clientId, pageable))
+                        .data(PageUtils.from(service.fetchByClientId(clientId, pageable)))
                         .build()
         );
     }
@@ -144,19 +150,20 @@ public class PaymentController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = PaymentPageResponse.class)
             )
     )
-    public ResponseEntity<?> fetchBySaleOrderId(
+    public ResponseEntity<RestApiResponse<PageResponse<PaymentResponse>>> fetchBySaleOrderId(
             @Parameter(description = "Sale order ID", example = "1")
             @PathVariable Long saleOrderId,
+            @ParameterObject
             @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<PaymentResponse>>builder()
+                RestApiResponse.<PageResponse<PaymentResponse>>builder()
                         .message("Payments for sale order fetched successfully")
-                        .data(service.fetchBySaleOrderId(saleOrderId, pageable))
+                        .data(PageUtils.from(service.fetchBySaleOrderId(saleOrderId, pageable)))
                         .build()
         );
     }
@@ -171,19 +178,20 @@ public class PaymentController {
             responseCode = "200",
             content = @Content(
                     mediaType = "application/json",
-                    schema = @Schema(implementation = Page.class)
+                    schema = @Schema(implementation = PaymentPageResponse.class)
             )
     )
-    public ResponseEntity<?> fetchByPaymentTypeId(
+    public ResponseEntity<RestApiResponse<PageResponse<PaymentResponse>>> fetchByPaymentTypeId(
             @Parameter(description = "Payment type ID", example = "1")
             @PathVariable Long paymentTypeId,
+            @ParameterObject
             @PageableDefault(size = 20, page = 0, sort = "id", direction = Sort.Direction.DESC)
             Pageable pageable
     ) {
         return ResponseEntity.ok(
-                RestApiResponse.<Page<PaymentResponse>>builder()
+                RestApiResponse.<PageResponse<PaymentResponse>>builder()
                         .message("Payments for payment type fetched successfully")
-                        .data(service.fetchByPaymentTypeId(paymentTypeId, pageable))
+                        .data(PageUtils.from(service.fetchByPaymentTypeId(paymentTypeId, pageable)))
                         .build()
         );
     }

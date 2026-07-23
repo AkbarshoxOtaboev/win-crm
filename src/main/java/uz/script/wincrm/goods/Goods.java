@@ -9,6 +9,7 @@ import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.SQLRestriction;
 import uz.script.wincrm.goods.enums.Type;
 import uz.script.wincrm.sale.SaleOrderItem;
+import uz.script.wincrm.sale.SaleOrderWaste;
 import uz.script.wincrm.stock.Stock;
 import uz.script.wincrm.stock.StockHistory;
 import uz.script.wincrm.utils.BaseEntity;
@@ -58,6 +59,12 @@ public class Goods extends BaseEntity {
 
     @OneToMany(mappedBy = "goods")
     private List<SaleOrderItem> saleOrderItems;
+
+    /**
+     * Ushbu material bo'yicha barcha buyurtmalarda qayd etilgan ortib qolgan (waste) yozuvlar.
+     */
+    @OneToMany(mappedBy = "goods")
+    private List<SaleOrderWaste> saleOrderWastes;
 
     @OneToMany(mappedBy = "goods")
     private List<Stock> stocks;

@@ -19,6 +19,7 @@ public enum Resource {
     INVENTORY,
     SALE_ORDER,
     SALE_ORDER_ITEM,
+    SALE_ORDER_WASTE,
     PAYMENT_TYPE,
     PAYMENT,
     STOCK,

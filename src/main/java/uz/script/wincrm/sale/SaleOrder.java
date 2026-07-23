@@ -112,6 +112,14 @@ public class SaleOrder extends BaseEntity {
     @OneToMany(mappedBy = "saleOrder")
     private List<SaleOrderItem> saleOrderItems;
 
+    /**
+     * Ishlab chiqarishdan ortib qolgan materiallar (waste) ro'yxati. saleOrderItems'ga
+     * o'xshab cascade'siz - faqat INFO/hisobot maqsadida o'qiladi, buyurtma hisob-kitobiga
+     * (totalSum/debtSum) hech qanday ta'sir qilmaydi.
+     */
+    @OneToMany(mappedBy = "saleOrder")
+    private List<SaleOrderWaste> saleOrderWastes;
+
     @OneToMany(mappedBy = "saleOrder")
     private List<Payment> payments;
 }

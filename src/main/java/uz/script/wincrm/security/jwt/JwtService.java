@@ -15,6 +15,8 @@ import java.util.Date;
 @RequiredArgsConstructor
 public class JwtService {
 
+    private static final String SID_CLAIM = "sid";
+
     private final JwtProperties jwtProperties;
 
     private SecretKey secretKey;
@@ -26,20 +28,21 @@ public class JwtService {
         );
     }
 
-    public String generateAccessToken(String username) {
-        return generateToken(username, jwtProperties.getAccessExpirationMs());
+    public String generateAccessToken(String username, Long sessionId) {
+        return generateToken(username, jwtProperties.getAccessExpirationMs(), sessionId);
     }
 
-    public String generateRefreshToken(String username) {
-        return generateToken(username, jwtProperties.getRefreshExpirationMs());
+    public String generateRefreshToken(String username, Long sessionId) {
+        return generateToken(username, jwtProperties.getRefreshExpirationMs(), sessionId);
     }
 
-    private String generateToken(String username, long expiration) {
+    private String generateToken(String username, long expiration, Long sessionId) {
         Date now = new Date();
         Date expiry = new Date(now.getTime() + expiration);
 
         return Jwts.builder()
                 .subject(username)
+                .claim(SID_CLAIM, sessionId)
                 .issuedAt(now)
                 .expiration(expiry)
                 .signWith(secretKey, Jwts.SIG.HS256)
@@ -48,6 +51,11 @@ public class JwtService {
 
     public String extractUsername(String token) {
         return extractAllClaims(token).getSubject();
+    }
+
+    public Long extractSid(String token) {
+        Object sid = extractAllClaims(token).get(SID_CLAIM);
+        return sid == null ? null : Long.valueOf(sid.toString());
     }
 
     public Date extractExpiration(String token) {

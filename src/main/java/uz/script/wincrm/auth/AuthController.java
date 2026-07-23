@@ -26,10 +26,13 @@ import uz.script.wincrm.exceptions.UnauthorizedException;
 import uz.script.wincrm.exceptions.UserDisabledException;
 import uz.script.wincrm.security.blacklist.TokenBlacklistService;
 import uz.script.wincrm.security.jwt.JwtService;
+import uz.script.wincrm.security.refreshToken.RefreshToken;
+import uz.script.wincrm.security.refreshToken.SessionService;
 import uz.script.wincrm.users.User;
 import uz.script.wincrm.users.UserRepository;
 
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -40,6 +43,7 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final TokenBlacklistService tokenBlacklistService;
+    private final SessionService sessionService;
     private final UserRepository userRepository;
 
     @PostMapping("/login")
@@ -49,7 +53,7 @@ public class AuthController {
     )
     @Operation(
             summary = "User login",
-            description = "Returns access token and refresh token"
+            description = "Returns access token, refresh token and session id"
     )
     @ApiResponses({
             @ApiResponse(
@@ -68,7 +72,12 @@ public class AuthController {
                     )
             )
     })
-    public ResponseEntity<AuthResponse> login(@RequestBody LoginRequest request) {
+    public ResponseEntity<AuthResponse> login(
+            @RequestBody LoginRequest request,
+            HttpServletRequest httpRequest
+    ) {
+
+        User user;
 
         try {
             authenticationManager.authenticate(
@@ -78,7 +87,7 @@ public class AuthController {
                     )
             );
 
-            User user = userRepository.findByUsername(request.getUsername())
+            user = userRepository.findByUsername(request.getUsername())
                     .orElseThrow(() -> new UsernameNotFoundException("User not found"));
 
             user.setLastLogin(LocalDateTime.now());
@@ -90,14 +99,29 @@ public class AuthController {
             throw new UserDisabledException("User account is disabled");
         }
 
-        String accessToken = jwtService.generateAccessToken(request.getUsername());
-        String refreshToken = jwtService.generateRefreshToken(request.getUsername());
+        // Bitta faol sessiya siyosati: yangi sessiya yaratiladi, eskisi avtomatik o'chiriladi
+        RefreshToken session = sessionService.issueSession(
+                user.getUsername(),
+                resolveIp(httpRequest),
+                httpRequest.getHeader("User-Agent")
+        );
+
+        String accessToken = jwtService.generateAccessToken(user.getUsername(), session.getId());
+        String refreshToken = jwtService.generateRefreshToken(user.getUsername(), session.getId());
+
+        LocalDateTime refreshExpiresAt = LocalDateTime.ofInstant(
+                jwtService.extractExpiration(refreshToken).toInstant(),
+                ZoneId.systemDefault()
+        );
+
+        sessionService.finalizeSession(session.getId(), refreshToken, refreshExpiresAt);
 
         return ResponseEntity.ok(
                 AuthResponse.builder()
                         .accessToken(accessToken)
                         .refreshToken(refreshToken)
                         .tokenType("Bearer")
+                        .sessionId(session.getId())
                         .build()
         );
     }
@@ -123,23 +147,31 @@ public class AuthController {
             )
     })
     public ResponseEntity<AuthResponse> refreshToken(
-            @RequestBody RefreshTokenRequest request
+            @RequestBody RefreshTokenRequest request,
+            HttpServletRequest httpRequest
     ) {
         String refreshToken = request.getRefreshToken();
 
         if (!jwtService.isTokenValid(refreshToken)) {
-            throw new RuntimeException("Invalid refresh token");
+            throw new UnauthorizedException("Invalid refresh token");
         }
 
-        String username = jwtService.extractUsername(refreshToken);
+        Long sid = jwtService.extractSid(refreshToken);
 
-        String newAccessToken = jwtService.generateAccessToken(username);
+        RefreshToken session = sessionService.validateAndTouch(
+                sid,
+                resolveIp(httpRequest),
+                httpRequest.getHeader("User-Agent")
+        ).orElseThrow(() -> new UnauthorizedException("Sessiya yopilgan yoki muddati tugagan"));
+
+        String newAccessToken = jwtService.generateAccessToken(session.getUsername(), session.getId());
 
         return ResponseEntity.ok(
                 AuthResponse.builder()
                         .accessToken(newAccessToken)
                         .refreshToken(refreshToken)
                         .tokenType("Bearer")
+                        .sessionId(session.getId())
                         .build()
         );
     }
@@ -152,7 +184,7 @@ public class AuthController {
     )
     @Operation(
             summary = "User logout",
-            description = "Blacklist current access token"
+            description = "Blacklists current access token and revokes the session"
     )
     @ApiResponses({
             @ApiResponse(
@@ -178,6 +210,23 @@ public class AuthController {
 
         tokenBlacklistService.blacklist(token, remainingTime);
 
+        Long sid = jwtService.extractSid(token);
+
+        if (sid != null) {
+            sessionService.revoke(sid);
+        }
+
         return ResponseEntity.ok("Logged out successfully");
+    }
+
+    private String resolveIp(HttpServletRequest request) {
+
+        String forwarded = request.getHeader("X-Forwarded-For");
+
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
     }
 }

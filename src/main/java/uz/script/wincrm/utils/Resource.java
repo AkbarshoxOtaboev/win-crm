@@ -28,5 +28,6 @@ public enum Resource {
     COMPANY_DETAIL,
     DEBT_NOTIFICATION,
     DASHBOARD,
-    BOT_SETTINGS
+    BOT_SETTINGS,
+    SESSION
 }

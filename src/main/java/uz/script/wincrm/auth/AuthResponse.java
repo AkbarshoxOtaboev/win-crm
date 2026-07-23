@@ -13,4 +13,6 @@ public class AuthResponse {
     private String refreshToken;
     @Schema(description = "Token type", example = "Bearer")
     private String tokenType;
+    @Schema(description = "Session id", example = "42")
+    private Long sessionId;
 }

@@ -12,7 +12,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 import uz.script.wincrm.security.CustomUserDetailsService;
 import uz.script.wincrm.security.blacklist.TokenBlacklistService;
-
+import uz.script.wincrm.security.refreshToken.SessionService;
 
 import java.io.IOException;
 
@@ -23,6 +23,7 @@ public class JwtFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final TokenBlacklistService blacklistService;
     private final CustomUserDetailsService userDetailsService;
+    private final SessionService sessionService;
 
     @Override
     protected void doFilterInternal(
@@ -48,6 +49,13 @@ public class JwtFilter extends OncePerRequestFilter {
 
             if (!jwtService.isTokenValid(token)) {
                 sendUnauthorized(response, "Invalid or expired token");
+                return;
+            }
+
+            Long sid = jwtService.extractSid(token);
+
+            if (sessionService.validateAndTouch(sid, resolveIp(request), request.getHeader("User-Agent")).isEmpty()) {
+                sendUnauthorized(response, "Sessiya yopilgan");
                 return;
             }
 
@@ -91,5 +99,16 @@ public class JwtFilter extends OncePerRequestFilter {
             "message":"%s"
         }
         """.formatted(message));
+    }
+
+    private String resolveIp(HttpServletRequest request) {
+
+        String forwarded = request.getHeader("X-Forwarded-For");
+
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+
+        return request.getRemoteAddr();
     }
 }
